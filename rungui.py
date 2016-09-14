@@ -14,7 +14,6 @@ import matplotlib.backends.backend_tkagg as tkagg
 import argparse
 
 
-
 class App:
     "Provide GUI for frequency scan and Rabi Flop experiments."
     def __init__( self, conn ):
@@ -114,7 +113,8 @@ class App:
 
 def experiment( conn, args):
     "Run experiment and route incoming data to conn."
-    from freqscan import Experiment, RabiFlop, FreqScan
+    from experiment_base import RabiFlop, FreqScan
+    from freqscan import Experiment
 
     ionpos = args.ionpos
     order = [True if x > .5 else False for x in map(int,args.order)]+ [False]
@@ -125,7 +125,7 @@ def experiment( conn, args):
     if args.freqscan:
         highfreq, lowfreq, freqstep, pulse_duration = float(args.freqscan[0]), \
                 float(args.freqscan[1]), float(args.freqscan[2]), int(args.freqscan[3])
-        freqscan = FreqScan(lowfreq, highfreq, freqstep, pulse_duration )
+        freqscan = FreqScan(lowfreq, highfreq, freqstep, pulse_duration)
     if args.rabiflop:
         starttime, stoptime, timestep, frequency = int(args.rabiflop[0]), int(args.rabiflop[1]), \
                 int(args.rabiflop[2]), float(args.rabiflop[3])
@@ -146,16 +146,11 @@ if __name__ == '__main__':
     parser.add_argument('ionpos', help='ionpos filename. Must have extra ionpos at dark position at end of file for background')
     parser.add_argument('out', help='output filename')
     parser.add_argument('nruns', help='number of runs to do')
-    #parser.add_argument('nions', type=int, help='number of ions, bright or dark, in chain')
-    #parser.add_argument('ndark', type=int, help='number of dark ions in chain')
     parser.add_argument('-order', dest='order', help='order of ions, 1 = bright 0 = dark. Must have correct # of bright/dark regardless of whether using order')
-    #parser.add_argument('-symmetry', action='store_const', const='True', help='0 = no sym, use order 1 = symmetrize on order 2 = no order specificity')
     parser.add_argument('-freqscan', nargs = 4, help='Run Freqscan. Params: High Freq, Low Freq, freqstep, pulse_duration')
     parser.add_argument('-rabiflop', nargs = 4, help='Run RabiFlop. Params: start time, stop time, timestep, frequency')
     
     arguments = parser.parse_args()
-
-#
 
     PARENT_CONN, CHILD_CONN = Pipe()
 

@@ -5,71 +5,8 @@ from luca import Luca
 from freq import FreqDriver
 from ni_digital_io import NiDriver
 from ni_simple_digital_io import NiDriver as NiSimpleDriver
+from experiment_base import *
 import numpy as np
-
-class ExperimentBase:
-    Pockels = 1 << 2
-    Red = 1 << 7
-    Blue = 1 << 6
-    Orange = 1 << 5
-    Shelve = 1 << 1
-
-    def build_waveform( self, dark_time, shelve_time ):
-        waveform = [self.Pockels | self.Red | self.Blue] * 2000
-        waveform.extend( [self.Pockels | self.Red] * 10 )
-        waveform.extend( [self.Pockels] * 10 )
-
-        waveform.extend( [self.Orange] * dark_time )
-        waveform.extend( [0] * 10 )
-
-        waveform.extend( [self.Shelve] * shelve_time )
-        waveform.extend( [0] * 10 )
-        waveform.extend( [self.Red | self.Blue] * 10 )
-        return waveform
-
-class RabiFlop( ExperimentBase ):
-    def __init__( self, start_time, stop_time, time_step, frequency ):
-        self.current_time = start_time
-        self.stop_time = stop_time
-        self.time_step = time_step
-        self.frequency = frequency
-
-    def setup( self, freq_driver, ni_driver ):
-        self.freq_driver = freq_driver
-        self.ni_driver = ni_driver
-        self.freq_driver.set_frequency( self.frequency, 2.5 )
-
-    def step( self, freq_driver, ni_driver ):
-        if self.current_time > self.stop_time:
-            return False
-        self.ni_driver.set_samples( self.build_waveform( 0, self.current_time ) )
-        self.current_time += self.time_step
-        return True
-
-    def control_var( self ):
-        return self.current_time - self.time_step
-
-class FreqScan( ExperimentBase ):
-    def __init__( self, start_freq, stop_freq, freq_step, pulse_duration ):
-        self.current_freq = start_freq
-        self.stop_freq = stop_freq
-        self.freq_step = freq_step
-        self.pulse_duration = pulse_duration
-
-    def setup( self, freq_driver, ni_driver ):
-        self.freq_driver = freq_driver
-        self.ni_driver = ni_driver
-        self.ni_driver.set_samples( self.build_waveform( 0, self.pulse_duration ) )
-
-    def step( self, freq_driver, ni_driver ):
-        if self.current_freq > self.stop_freq:
-            return False
-        self.freq_driver.set_frequency( self.current_freq, 2.5 )
-        self.current_freq += self.freq_step
-        return True
-
-    def control_var( self ):
-        return self.current_freq - self.freq_step
 
 class Experiment:
     PockelsChan = "PXI1Slot9/port0/line2"
