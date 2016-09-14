@@ -13,7 +13,7 @@ class ExperimentBase:
     Blue = 1 << 6
     Orange = 1 << 5
     Shelve = 1 << 1
-    
+
     def build_waveform( self, dark_time, shelve_time ):
         waveform = [self.Pockels | self.Red | self.Blue] * 2000
         waveform.extend( [self.Pockels | self.Red] * 10 )
@@ -33,7 +33,7 @@ class RabiFlop( ExperimentBase ):
         self.stop_time = stop_time
         self.time_step = time_step
         self.frequency = frequency
-        
+
     def setup( self, freq_driver, ni_driver ):
         self.freq_driver = freq_driver
         self.ni_driver = ni_driver
@@ -77,9 +77,9 @@ class Experiment:
     BlueChan = "PXI1Slot9/port0/line6"
     OrangeChan = "PXI1Slot9/port0/line5"
     ShelveChan = "PXI1Slot9/port0/line1"
-    Chans = ",".join( [PockelsChan, RedChan, 
+    Chans = ",".join( [PockelsChan, RedChan,
         BlueChan, OrangeChan, ShelveChan] )
-   
+
     def __init__( self, nruns, experiment, ions, desired_order, out, conn=None ):
         #0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
         camera = Luca()
@@ -97,51 +97,42 @@ class Experiment:
                 for l in ionfile:
                     pos = tuple( int(x) for x in l.split() )
                     ion_positions.append( pos )
-    
+
             bg = []
+            bright = []
             for i in range(30):
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
             threshold = np.mean(bg) + 3*np.std(bg)
-            
+
             experiment.setup( freq_src, ni )
             print( ion_positions )
-
-
-			##########################################
-			#CHANGES BEING MADE BELOW-----------------
-			##########################################			
             while experiment.step( freq_src, ni ):
-                nsucc = [0 for i in ion_positions][:-1] # number of successes for each ion (discounting "fake dark ion" for bg counting.)
-                indicator = 0 #number of time it has run
-		while indicator<nruns: #allows dynamic nruns switching
-                #for i in range( nruns ): #old code
-                    data = self.build_data( 
+                for i in range( nruns ):
+                    data = self.build_data(
                         camera, ion_positions, camera.get_image() )
                     ion_order = [ d > threshold for d in data ]
-					
-		    
+
                     bg.append( data[-1] )
                     if len( bg ) > 1000:
                         bg = bg[100:]
                     threshold = np.mean(bg) + 3*np.std(bg)
 
                     while ion_order != desired_order:
-                        #Get ions to correct order by turning off 650.
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
                         if curr_bright_number == desired_bright_number:
-                            
+
                             r = NiSimpleDriver( self.RedChan )
                             r.write_single( False )
                             time.sleep( reorder_time )
                             r.write_single( True )
                             r.close()
-                        time.sleep( 1.0 )
+                        time.sleep( 0.5 )
 
                         camera.get_image()
-                        data = self.build_data( 
+                        data = self.build_data(
                             camera, ion_positions, camera.get_image() )
-                        
+
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
                         print( "{} -> {}".format( prev_order, ion_order ) )
@@ -154,17 +145,17 @@ class Experiment:
                             print( "New reorder time: {}".format( reorder_time ) )
                         if reorder_time < 0.1:  reorder_time = 0.1
                         if reorder_time > 10.0: reorder_time = 10.0
-                        
+
                         if conn is not None:
                             outdata = [str( experiment.control_var() )]
                             outdata.extend( str(d) for d in data )
                             outdata.extend( str(d) for d in data )
                             conn.send( 'reordata ' + '\t'.join(outdata) )
-                    
+
                     ni.run()
-                    postdata = self.build_data( 
-                        camera, ion_positions, camera.get_image() )
-                    data.extend( postdata )
+                    postdata = self.build_data(
+                        camera, ion_positions, camera.get_image())
+                    data.extend(postdata)
 
                     outdata = [str( experiment.control_var() )]
                     outdata.extend( str(d) for d in data )
@@ -174,42 +165,20 @@ class Experiment:
                     output.write( '\t'.join(outdata) + '\n' )
                     output.flush()
 
-                    #--------------NEW CODE-----------------------
-  #                  ion_order = [ d > threshold for d in postdata ] # for use in control of loop
- #                   for i in range(len(nsucc)):
-#			if ion_order[i]:
-#			    nsucc[i]+=1 #counts number of successes (bright)
-#					
-#					
-#		    print ion_order
-#		    if indicator+1==20: #since it starts at 0 need to add 1
-#			props = [np.abs(0.5 - x/20.0) for x in nsucc]
-#			print props
-#			print max(props)
-#			bStdE = self.binStdrderr(indicator+1,max(props)+0.5) #finds largest binomial standard error in dataset
-#			if bStdE<0.05:
-#			    nruns = 20 #this will force the program to break out of this while loop
-#			    print bStdE, nruns
-#			else:
-#			    nruns = 100
-#			    print bStdE, nruns
-		    #---------------end new code section--------------------
-
                     d = NiSimpleDriver( self.OrangeChan )
                     d.write_single( True )
                     d.close()
 
                     time.sleep( 0.2 )
-		    indicator+=1 #new code
-              
-              
+
+
         finally:
             camera.shutdown()
 
-	#following builds array of fluorescence for different ions based on camera
+
     def build_data( self, camera, ionpos, image ):
         data = []
-        sum_dist = 15
+        sum_dist = 20
         for p in ionpos:
             val = 0
             for ox in range( -sum_dist, sum_dist ):
@@ -217,12 +186,13 @@ class Experiment:
                     val += image[ (p[1] + oy) * camera.width + p[0] + ox ]
             data.append( val )
         return data
-	
-    def binStdrderr(self, n,p,z=1.0):
-    #finds standard error for a binomial distribution
-    #n = # of runs, p = proportion of successes
-        se = z*np.sqrt((1/(n*1.0))*p*(1-p)+(1/(4.0*n*n))*z*z)
+
+    def binStdrderr(self, n, p, z=1.0):
+        # finds standard error for a binomial distribution
+        # n = # of runs, p = proportion of successes
+        se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
         return se
+
 
 if __name__ == '__main__':
     import sys
@@ -241,4 +211,3 @@ if __name__ == '__main__':
 
     Experiment( nruns, current_freq, stop_freq, freq_step, pulse_len,
         ions, output, None )
-
