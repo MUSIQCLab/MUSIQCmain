@@ -178,7 +178,7 @@ class Experiment:
 
     def build_data( self, camera, ionpos, image ):
         data = []
-        sum_dist = 20
+        sum_dist = 17 #used to be 20...
         for p in ionpos:
             val = 0
             for ox in range( -sum_dist, sum_dist ):
