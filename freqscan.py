@@ -38,7 +38,8 @@ class Experiment:
             for i in range(30):
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append(data[-1])
-                bright.append(min(map(lambda x: data[x] if x else 0, desired_order)))
+                minimum_barium_brightness = min(map(lambda x: data[x] if x else np.inf, desired_order))
+                bright.append(minimum_barium_brightness)
             threshold = np.mean(bg) + 3 * np.std(bg)
 
             experiment.setup(freq_src, ni)
@@ -53,21 +54,24 @@ class Experiment:
                     if len(bg) > 1000:
                         bg = bg[100:]
 
-                    if len(bright) > 500:
-                        bright = bright[100:]
+                    if len(bright) > 50:
+                        bright = bright[10:]
 
                     threshold = np.mean(bg) + 3 * np.std(bg)
                     conservative_brightness = np.mean(bright) - np.std(bright)
 
-                    while not conservative_brightness > threshold:
+                  while not conservative_brightness > threshold:
                         camera.get_image()
                         data = self.build_data(
                             camera, ion_positions, camera.get_image())
-                        bright.append(min(map(lambda x: data[x] if x else 0, desired_order)))
-                        if len(bright) > 500:
-                            bright = bright[100:]
+                        minimum_barium_brightness = min(map(lambda x: data[x] if x else np.inf, desired_order))
+                        bright.append(minimum_barium_brightness)
+                        if len(bright) > 20:
+                            bright = bright[10:]
                         conservative_brightness = np.mean(bright) - np.std(bright)
                         print("Ions too dim. Adjust lasers or trap parameters.")
+                        print "mean brightness:", np.mean(bright), \
+                              "last brightness:", minimum_barium_brightness
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
@@ -77,9 +81,13 @@ class Experiment:
                             time.sleep(reorder_time)
                             r.write_single(True)
                             r.close()
+                        else:
+                            print("Ions out of order or too dim. Minimum brightness:")
+                            minimum_barium_brightness = min(map(lambda x: data[x] if x else np.inf, desired_order))
+                            
                         time.sleep(0.5)
-
                         old_ion_order = ion_order
+                        
                         while curr_bright_number != desired_bright_number:
                             camera.get_image()
                             data = self.build_data(
@@ -107,7 +115,7 @@ class Experiment:
                             outdata.extend(str(d) for d in data)
                             conn.send('reordata ' + '\t'.join(outdata))
 
-                    bright.append(min(map(lambda x: data[x] if x else 0, desired_order)))
+                    bright.append(min(map(lambda x: data[x] if x else np.inf, desired_order)))
 
                     ni.run()
                     postdata = self.build_data(
