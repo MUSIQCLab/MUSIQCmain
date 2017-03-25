@@ -134,8 +134,10 @@ def experiment(conn, args):
 
     if args.freqscan:  # running low to high in frequency
         Experiment(nruns, freqscan, ionpos, order, outdata, conn)
+        Experiment.run_experiment(freqscan, nruns, outdata)
     elif args.rabiflop:
         Experiment(nruns, rabiflop, ionpos, order, outdata, conn)
+        Experiment.run_experiment( rabiflop, nruns, outdata)
     else:
         print("No experiment type specified")
 
