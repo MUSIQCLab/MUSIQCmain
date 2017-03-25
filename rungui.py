@@ -111,53 +111,56 @@ class App:
         self.data_canvas.draw()
 
 
-def experiment( conn, args):
+def experiment(conn, args):
     "Run experiment and route incoming data to conn."
     from experiment_base import RabiFlop, FreqScan
     from freqscan import Experiment
 
     ionpos = args.ionpos
-    order = [True if x > .5 else False for x in map(int,args.order)]+ [False]
-    nions, ndark = len(order), order.count(False)
+    order = [True if x > .5 else False
+             for x in map(int, args.order)] + [False]  # dark on the right end
     nruns = int(args.nruns)
     outdata = args.out
 
     if args.freqscan:
         highfreq, lowfreq, freqstep, pulse_duration = float(args.freqscan[0]), \
-                float(args.freqscan[1]), float(args.freqscan[2]), int(args.freqscan[3])
+                                                      float(args.freqscan[1]), float(args.freqscan[2]), int(
+            args.freqscan[3])
         freqscan = FreqScan(lowfreq, highfreq, freqstep, pulse_duration)
     if args.rabiflop:
         starttime, stoptime, timestep, frequency = int(args.rabiflop[0]), int(args.rabiflop[1]), \
-                int(args.rabiflop[2]), float(args.rabiflop[3])
+                                                   int(args.rabiflop[2]), float(args.rabiflop[3])
         rabiflop = RabiFlop(starttime, stoptime, timestep, frequency)
 
-    if args.freqscan: #running low to high in frequency
-        Experiment(nruns, freqscan, ionpos, order, outdata, conn )
+    if args.freqscan:  # running low to high in frequency
+        Experiment(nruns, freqscan, ionpos, order, outdata, conn)
     elif args.rabiflop:
-        Experiment(nruns, rabiflop , ionpos, order, outdata, conn )
+        Experiment(nruns, rabiflop, ionpos, order, outdata, conn)
     else:
         print("No experiment type specified")
 
-if __name__ == '__main__':
 
-#command line arguments 
+if __name__ == '__main__':
+    # command line arguments
 
     parser = argparse.ArgumentParser(description='Freq Scan Prgrm')
-    parser.add_argument('ionpos', help='ionpos filename. Must have extra ionpos at dark position at end of file for background')
+    parser.add_argument('ionpos',
+                        help='ionpos filename. Must have extra ionpos at dark position at end of file for background')
     parser.add_argument('out', help='output filename')
     parser.add_argument('nruns', help='number of runs to do')
-    parser.add_argument('-order', dest='order', help='order of ions, 1 = bright 0 = dark. Must have correct # of bright/dark regardless of whether using order')
-    parser.add_argument('-freqscan', nargs = 4, help='Run Freqscan. Params: High Freq, Low Freq, freqstep, pulse_duration')
-    parser.add_argument('-rabiflop', nargs = 4, help='Run RabiFlop. Params: start time, stop time, timestep, frequency')
-    
+    parser.add_argument('-order', dest='order',
+                        help='order of ions, 1 = bright 0 = dark. Must have correct # of bright/dark regardless of whether using order')
+    parser.add_argument('-freqscan', nargs=4,
+                        help='Run Freqscan. Params: High Freq, Low Freq, freqstep, pulse_duration')
+    parser.add_argument('-rabiflop', nargs=4, help='Run RabiFlop. Params: start time, stop time, timestep, frequency')
+
     arguments = parser.parse_args()
 
     PARENT_CONN, CHILD_CONN = Pipe()
 
-    PROCESS = Process( target=experiment, args=(CHILD_CONN,arguments) )
+    PROCESS = Process(target=experiment, args=(CHILD_CONN, arguments))
     PROCESS.start()
 
-    App( PARENT_CONN )
+    App(PARENT_CONN)
 
     PROCESS.join()
-
