@@ -34,16 +34,19 @@ class Experiment:
                 for l in ionfile:
                     pos = tuple( int(x) for x in l.split() )
                     ion_positions.append( pos )
-
+            print("ion_positions:")
+            print(ion_positions)
             bg = []
             bright = []
             for i in range(30):
+                print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
             threshold = np.mean(bg) + 3*np.std(bg)
 
             experiment.setup( freq_src, ni )
-            print( ion_positions )
+            print("bg, threshold:")
+            print(bg, threshold)
             while experiment.step( freq_src, ni ):
                 for i in range( nruns ):
                     data = self.build_data(
@@ -51,9 +54,11 @@ class Experiment:
                     ion_order = [ d > threshold for d in data ]
 
                     bg.append( data[-1] )
-                    if len( bg ) > 1000:
+                    if len( bg ) > 200:
                         bg = bg[100:]
                     threshold = np.mean(bg) + 3*np.std(bg)
+                    print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
+                          threshold + 4000)
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
@@ -64,11 +69,15 @@ class Experiment:
                             time.sleep( reorder_time )
                             r.write_single( True )
                             r.close()
-                        time.sleep( 0.5 )
+                        time.sleep( 0.3 )
 
-                        camera.get_image()
+                        #camera.get_image() # Inconsistent results on whether this is necessary.
                         data = self.build_data(
                             camera, ion_positions, camera.get_image() )
+                        if np.max(data) < threshold + 4000:
+                            print("ions getting too dim.")
+                            time.sleep(5)
+                    
 
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
@@ -115,7 +124,7 @@ class Experiment:
 
     def build_data( self, camera, ionpos, image ):
         data = []
-        sum_dist = 20
+        sum_dist = 10
         for p in ionpos:
             val = 0
             for ox in range( -sum_dist, sum_dist ):
