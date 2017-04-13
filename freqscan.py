@@ -25,7 +25,6 @@ class Experiment:
         reorder_time = 0.5
 
         output = open( out, 'w' )
-        ion_order = []
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
 
         try:
@@ -37,12 +36,17 @@ class Experiment:
             print("ion_positions:")
             print(ion_positions)
             bg = []
-            bright = []
+            brights = []
             for i in range(30):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
-            threshold = np.mean(bg) + 3*np.std(bg)
+                bright = (x if x > (np.max(data) + np.mean(bg)) / 2 for x in data)
+                brights.append(bright)
+            crosstalk = np.std(brights) * np.sqrt(0.16)  # estimate 16% crosstalk. Could measure programatically.
+            threshold = np.mean(bg) + 3 * np.std(bg) + 2 * crosstalk
+
+            assert threshold > np.mean(bright) - 3 * np.std(bright)
 
             experiment.setup( freq_src, ni )
             print("bg, threshold:")
