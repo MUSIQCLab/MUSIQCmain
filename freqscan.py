@@ -18,11 +18,10 @@ class Experiment:
         BlueChan, OrangeChan, ShelveChan] )
 
     def __init__( self, nruns, experiment, ions, desired_order, out, conn=None ):
-        #0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
         camera = Luca()
         freq_src = FreqDriver( u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR' )
         ni = NiDriver( self.Chans )
-        reorder_time = 0.5
+        reorder_time = 0.2
 
         output = open( out, 'w' )
         ion_order = []
@@ -58,7 +57,7 @@ class Experiment:
                         bg = bg[100:]
                     threshold = np.mean(bg) + 3*np.std(bg)
                     print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                          threshold + 4000)
+                          threshold + 3000)
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
@@ -74,9 +73,13 @@ class Experiment:
                         #camera.get_image() # Inconsistent results on whether this is necessary.
                         data = self.build_data(
                             camera, ion_positions, camera.get_image() )
-                        if np.max(data) < threshold + 4000:
-                            print("ions getting too dim.")
-                            time.sleep(5)
+                        while np.max(data) < threshold + 3000:
+                            print("ions are too dim. Brightest:")
+                            data = self.build_data(
+                                camera, ion_positions, camera.get_image() )
+                            print(np.max(data))
+                            print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
+                          threshold + 3000)
                     
 
                         prev_order, ion_order = ion_order, \
@@ -89,6 +92,8 @@ class Experiment:
                             else:
                                 reorder_time *= 0.9
                             print( "New reorder time: {}".format( reorder_time ) )
+                            print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
+                          threshold + 3000)
                         if reorder_time < 0.1:  reorder_time = 0.1
                         if reorder_time > 10.0: reorder_time = 10.0
 
@@ -101,6 +106,12 @@ class Experiment:
                     ni.run()
                     postdata = self.build_data(
                         camera, ion_positions, camera.get_image())
+##                    post_ion_order = [d > threshold for d in postdata]
+##                    ion_number = np.sum(ion_order)
+##                    wrong_brights = [1 if desired == 0 and post == 1
+##                                         else 0 for desired, post in
+##                                         zip(desired_order, post_ion_order)]
+##                    if np.any(wrong_brights) or  
                     data.extend(postdata)
 
                     outdata = [str( experiment.control_var() )]
