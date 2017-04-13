@@ -46,7 +46,8 @@ class Experiment:
             crosstalk = np.std(brights) * np.sqrt(0.16)  # estimate 16% crosstalk. Could measure programatically.
             threshold = np.mean(bg) + 3 * np.std(bg) + 2 * crosstalk
 
-            assert threshold > np.mean(bright) - 3 * np.std(bright)
+            if threshold > np.mean(bright) - 3 * np.std(bright):
+                raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
             print("bg, threshold:")
@@ -78,7 +79,7 @@ class Experiment:
                         #camera.get_image() # Inconsistent results on whether this is necessary.
                         data = self.build_data(
                             camera, ion_positions, camera.get_image() )
-                        if np.max(data) < threshold + 4000:
+                        if np.max(data) < threshold + 2 * np.std(bright):
                             print("ions getting too dim.")
                             time.sleep(5)
                     
