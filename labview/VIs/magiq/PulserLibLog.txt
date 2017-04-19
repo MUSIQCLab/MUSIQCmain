@@ -1,0 +1,421 @@
+PulserLib Log: ...............
+viOpenDefaultRM
+00000000Success
+
+PXI12::0::INSTR;ID401110EE - Match - BAR0:D0500000 - MemoryType - virAddr:08E30000 - 
+PCI Bus Scan Completed
+found 1 board(s).
+Slot 4 reset.
+[4-2] PllChipEnable(enable) Reg=0x700
+[4-1] PllChipEnable(enable) Reg=0x700
+[4-0] PllChipEnable(enable) Reg=0x700
+[4:0:5] 0x000d88
+[4:0:5] 0x008090
+[4:0:5] 0x002898
+[4:0:5] 0x0060a0
+[4:0:5] 0x001628
+[4:0:5] 0x000000
+[4:0:6] 0x2003ca
+[4:0:9] 0x153e7c
+[4:0:10] 0x002046
+[4:0:11] 0x07c061
+[4:0:15] 0x000081
+Turn off PLL for hmc833 thru SPI
+[4:0:1] 0x000000
+[4:0:2] 0x000001
+[4:0:3] 0x000028
+[4:0:4] 0x000000
+[4:1:5] 0x50894c
+[4:1:6] 0x702f87
+[4:1:7] 0x0004fa
+[4:1:8] 0x0031df
+[4:1:9] 0x900380
+[4:1:11] 0x000072
+Turn off PLL for hmc764 thru SPI
+[4:1:1] 0x000000
+[4:1:2] 0x000001
+[4:1:3] 0x000049
+[4:1:4] 0xbd70a4
+[4:2:5] 0x000d88
+[4:2:5] 0x008090
+[4:2:5] 0x002898
+[4:2:5] 0x0060a0
+[4:2:5] 0x001628
+[4:2:5] 0x000000
+[4:2:6] 0x2003ca
+[4:2:9] 0x153e7c
+[4:2:10] 0x002046
+[4:2:11] 0x07c061
+[4:2:15] 0x000081
+Turn off PLL for hmc833 thru SPI
+[4:2:1] 0x000000
+[4:2:2] 0x000001
+[4:2:3] 0x000028
+[4:2:4] 0x000000
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 0.00 dB
+[4:3:0] 0x00003f
+
+[4-0] Attn = 0.00 dB (1)
+In mw3OutputOff.
+[4:1:8] 0x000000
+[4-1] PllChipEnable(disable) Reg=0x500
+Channel 1 Chip Disable.
+In mw3OutputOff.
+[4:2:8] 0x000000
+[4:2:5] 0x000d08
+[4:2:5] 0x000000
+[4:2:5] 0x006000
+Turn off PLL
+[4:2:1] 0x000000
+Leaving mw3OutputOff.
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 0.00 dB
+[4:3:0] 0x00003f
+
+[4-0] Attn = 0.00 dB (1)
+In mw3OutputOff.
+[4:1:8] 0x000000
+[4-1] PllChipEnable(disable) Reg=0x500
+Channel 1 Chip Disable.
+In mw3OutputOff.
+[4:2:8] 0x000000
+[4:2:5] 0x000d08
+[4:2:5] 0x000000
+[4:2:5] 0x006000
+Turn off PLL
+[4:2:1] 0x000000
+Leaving mw3OutputOff.
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 0.00 dB
+[4:3:0] 0x00003f
+
+[4-0] Attn = 0.00 dB (1)
+
+[4-1] Set freq. to 8000.000000 MHz
+[4-1] PllChipEnable(enable) Reg=0x700
+Turn on PLL
+[4:1:1] 0x000002
+
+[4-1] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-1] Attn = 0.00 dB (1)
+In mw3OutputOff.
+[4:2:8] 0x000000
+[4:2:5] 0x000d08
+[4:2:5] 0x000000
+[4:2:5] 0x006000
+Turn off PLL
+[4:2:1] 0x000000
+Leaving mw3OutputOff.
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 0.00 dB
+[4:3:0] 0x00003f
+
+[4-0] Attn = 0.00 dB (1)
+
+[4-1] Set freq. to 8000.000000 MHz
+[4-1] PllChipEnable(enable) Reg=0x700
+Turn on PLL
+[4:1:1] 0x000002
+
+[4-1] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-1] Attn = 0.00 dB (1)
+
+[4-2] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:2:1] 0x000002
+[4:2:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-2] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-2] Attn = 0.00 dB (1)
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 1.00 dB
+[4:3:0] 0x00003b
+
+[4-0] Attn = 1.00 dB (1)
+
+[4-1] Set freq. to 8000.000000 MHz
+[4-1] PllChipEnable(enable) Reg=0x700
+Turn on PLL
+[4:1:1] 0x000002
+
+[4-1] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-1] Attn = 0.00 dB (1)
+
+[4-2] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:2:1] 0x000002
+[4:2:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-2] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-2] Attn = 0.00 dB (1)
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 1.00 dB
+[4:3:0] 0x00003b
+
+[4-0] Attn = 1.00 dB (1)
+
+[4-1] Set freq. to 8000.000000 MHz
+[4-1] PllChipEnable(enable) Reg=0x700
+Turn on PLL
+[4:1:1] 0x000002
+
+[4-1] Attn = 1.00 dB
+[4:4:0] 0x00003b
+
+[4-1] Attn = 1.00 dB (1)
+
+[4-2] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:2:1] 0x000002
+[4:2:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-2] Attn = 0.00 dB
+[4:4:0] 0x00003f
+
+[4-2] Attn = 0.00 dB (1)
+
+[4-0] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:0:1] 0x000002
+[4:0:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-0] Attn = 1.00 dB
+[4:3:0] 0x00003b
+
+[4-0] Attn = 1.00 dB (1)
+
+[4-1] Set freq. to 8000.000000 MHz
+[4-1] PllChipEnable(enable) Reg=0x700
+Turn on PLL
+[4:1:1] 0x000002
+
+[4-1] Attn = 1.00 dB
+[4:4:0] 0x00003b
+
+[4-1] Attn = 1.00 dB (1)
+
+[4-2] Set freq. to 100.000000 MHz
+In _mw3SetHmc833Freq
+Hmc833 K=30.000000
+Turn on PLL
+[4:2:1] 0x000002
+[4:2:2] 0x000001
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Trying reference divider
+Unable to read reference divider
+
+[4-2] Attn = 1.00 dB
+[4:4:0] 0x00003b
+
+[4-2] Attn = 1.00 dB (1)
+In mw3OutputOff.
+[4:0:8] 0x000088
+[4:0:5] 0x000d08
+[4:0:5] 0x000000
+[4:0:5] 0x006000
+Turn off PLL
+[4:0:1] 0x000000
+Leaving mw3OutputOff.
+In mw3OutputOff.
+[4:1:8] 0x000000
+[4-1] PllChipEnable(disable) Reg=0x500
+Channel 1 Chip Disable.
+In mw3OutputOff.
+[4:2:8] 0x000000
+[4:2:5] 0x000d08
+[4:2:5] 0x000000
+[4:2:5] 0x006000
+Turn off PLL
+[4:2:1] 0x000000
+Leaving mw3OutputOff.
+In mw3Shutdown.

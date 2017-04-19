@@ -1,0 +1,13 @@
+
+
+安装说明：
+
+1、从NI公司官方网站下载USB驱动程序-NIVISAruntime.msi。
+2、运行NIVISAruntime.msi，安装驱动程序。
+3、运行并安装上位机应用软件。
+
+Setup Explanation:
+
+1、Download the USB driver from NI website-"NIVISAruntime.msi".
+2、Execute "NIVISAruntime.msi" to install the driver program.
+3、Execute and install the application software.

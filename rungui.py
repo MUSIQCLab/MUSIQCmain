@@ -66,9 +66,12 @@ class App:
                 self.background = self.background[100:]
 
             bkg = np.mean( self.background )
-            thresh = 3*np.std( self.background )
+	    thresh = 10*np.std( self.background )
 
             self.before = np.array( new_data[1:nions+1], dtype=float )
+	    bright = np.max(self.before) - bkg
+	    thresh = bright/3.
+
             self.after = np.array( new_data[nions+2:2*nions+2], dtype=float )
 
             before_ions = self.before - bkg > thresh
@@ -93,8 +96,8 @@ class App:
         self.after_axes.clear()
         self.before_axes.bar( np.arange(len(self.before)), self.before )
         self.after_axes.bar( np.arange(len(self.after)), self.after )
-        self.before_axes.set_ylim( 800000, 830000 )
-        self.after_axes.set_ylim( 800000, 830000 )
+        self.before_axes.set_ylim( 300000, 345000 )
+        self.after_axes.set_ylim( 300000, 345000 )
         self.bright_canvas.draw()
 
         keys = list( sorted(self.occurences.keys()) )
