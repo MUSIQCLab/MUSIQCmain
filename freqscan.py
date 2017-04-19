@@ -1,4 +1,3 @@
-
 import time
 
 from luca import Luca
@@ -17,10 +16,11 @@ class Experiment:
     Chans = ",".join( [PockelsChan, RedChan,
         BlueChan, OrangeChan, ShelveChan] )
 
-    def __init__( self, nruns, experiment, ions, desired_order, out, conn=None ):
+    def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
+        # 0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
         camera = Luca()
-        freq_src = FreqDriver( u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR' )
-        ni = NiDriver( self.Chans )
+        freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
+        ni = NiDriver(self.Chans)
         reorder_time = 0.2
 
         output = open( out, 'w' )
@@ -28,7 +28,7 @@ class Experiment:
         debug = open( "debug.dat", 'w')
         try:
             ion_positions = []
-            with open( ions, 'r' ) as ionfile:
+            with open(ions, 'r') as ionfile:
                 for l in ionfile:
                     pos = tuple( int(x) for x in l.split() )
                     ion_positions.append( pos )
@@ -36,19 +36,16 @@ class Experiment:
             print(ion_positions)
             bg = []
             brights = []
-	    crosstalk = []
+	       crosstalk = []
             for i in range(30):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
-		data.sort()
-		data.reverse()
-		brights.extend(data[0:desired_bright_number])
-		crosstalk.append(data[desired_bright_number])
-		print(np.max(data), np.mean(bg), np.mean(crosstalk))
-
-#            crosstalk = np.std(brights) * np.sqrt(0.25)  # estimate 25% crosstalk. Could measure programatically.
-#            threshold = (np.mean(crosstalk) + 3.5 * np.std(brights))
+            data.sort()
+            data.reverse()
+            brights.extend(data[0:desired_bright_number])
+            crosstalk.append(data[desired_bright_number])
+            print(np.max(data), np.mean(bg), np.mean(crosstalk))
 
             threshold = (np.mean(brights) + np.mean(bg) - np.std(bg))/2.
 
@@ -58,21 +55,20 @@ class Experiment:
             experiment.setup( freq_src, ni )
             print("bg, threshold:")
             print(np.mean(bg), threshold)
-	    i = 0 #counter to keep track of how often debugging information is displayed in console output
+            i = 0 #counter to keep track of how often debugging information is displayed in console output
             while experiment.step( freq_src, ni ):
                 for i in range( nruns ):
-		    i += 1
-
+                    i += 1
                     data = self.build_data(
-                        camera, ion_positions, camera.get_image() )
-                    ion_order = [ d > threshold for d in data ]
+                        camera, ion_positions, camera.get_image())
+                    ion_order = [d > threshold for d in data]
 
                     bg.append( data[-1] )
-		    for x in data:
-		        if x > (np.mean(brights) + np.mean(bg))/2.:
-			    brights.append(x)
+                    for x in data:
+                        if x > (np.mean(brights) + np.mean(bg))/2.:
+                            brights.append(x)
                     if len(brights) > 20:
-		        brights = brights[10:]
+                        brights = brights[10:]
                     if len( bg ) > 20:
                         bg = bg[10:]
 #                    threshold = (np.mean(crosstalk) + np.mean(brights))/2.
@@ -83,36 +79,35 @@ class Experiment:
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
-
                         if curr_bright_number == desired_bright_number:
-
-                            r = NiSimpleDriver( self.RedChan )
-                            r.write_single( False )
-                            time.sleep( reorder_time )
-                            r.write_single( True )
+                            r = NiSimpleDriver(self.RedChan)
+                            r.write_single(False)
+                            time.sleep(reorder_time)
+                            r.write_single(True)
                             r.close()
                         time.sleep( 0.3 )
 
+                        #camera.get_image() # Inconsistent results on whether this is necessary.
                         data = self.build_data(
                             camera, ion_positions, camera.get_image() )
-			j = 0
+                        j = 0
                         while np.max(data) < threshold + np.std(brights):
-			    j += 1
+                            j += 1
                             print("ions are too dim. Brights:")
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image() )
-			    sorted = np.array(data)
-			    sorted.sort()
+                            sorted = np.array(data)
+                            sorted.sort()
 
                             print(sorted[0:desired_bright_number])
                             if j % 5 == 0:
-			        print("bg mean:", np.mean(bg),)
-			        print("bg std :", np.std(bg))
-			        print("Threshhold:", threshold)
-			        print("bright std:", np.std(brights))
-			        print("Min Brightest:",threshold + 2 * np.std(brights))
-			        time.sleep(1)
-                   
+                                print("bg mean:", np.mean(bg),)
+                                print("bg std :", np.std(bg))
+                                print("Threshhold:", threshold)
+                                print("bright std:", np.std(brights))
+                                print("Min Brightest:",threshold + 2 * np.std(brights))
+                            time.sleep(1)
+
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
                         print( "{} -> {}".format( prev_order, ion_order ) )
@@ -123,60 +118,50 @@ class Experiment:
                             else:
                                 reorder_time *= 0.9
                             print( "New reorder time: {}".format( reorder_time ) )
-			    print(np.max(data))
-                            #print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                            #threshold + np.std(brights))
+                        print(np.max(data))
                         if reorder_time < 0.1:  reorder_time = 0.1
                         if reorder_time > 10.0: reorder_time = 10.0
 
                         if conn is not None:
-                            outdata = [str( experiment.control_var() )]
-                            outdata.extend( str(d) for d in data )
-                            outdata.extend( str(d) for d in data )
-                            conn.send( 'reordata ' + '\t'.join(outdata) )
+                            outdata = [str(experiment.control_var())]
+                            outdata.extend(str(d) for d in data)
+                            outdata.extend(str(d) for d in data)
+                            conn.send('reordata ' + '\t'.join(outdata))
 
                     ni.run()
                     postdata = self.build_data(
                         camera, ion_positions, camera.get_image())
-##                    post_ion_order = [d > threshold for d in postdata]
-##                    ion_number = np.sum(ion_order)
-##                    wrong_brights = [1 if desired == 0 and post == 1
-##                                         else 0 for desired, post in
-##                                         zip(desired_order, post_ion_order)]
-##                    if np.any(wrong_brights) or  
                     data.extend(postdata)
 
-                    outdata = [str( experiment.control_var() )]
-                    outdata.extend( str(d) for d in data )
+                    outdata = [str(experiment.control_var())]
+                    outdata.extend(str(d) for d in data)
                     print '\t'.join(outdata)
                     if conn is not None:
-                        conn.send('\t'.join(outdata) )
-                    output.write( '\t'.join(outdata) + '\n' )
+                        conn.send('\t'.join(outdata))
+                    output.write('\t'.join(outdata) + '\n')
                     output.flush()
 
-                    d = NiSimpleDriver( self.OrangeChan )
-                    d.write_single( True )
+                    d = NiSimpleDriver(self.OrangeChan)
+                    d.write_single(True)
                     d.close()
 
-                    time.sleep( 0.2 )
-
+                    time.sleep(0.2)
 
         finally:
             camera.shutdown()
 
-
-    def build_data( self, camera, ionpos, image ):
+    def build_data(self, camera, ionpos, image):
         data = []
         sum_dist = 10
         for p in ionpos:
             val = 0
-            for ox in range( -sum_dist, sum_dist ):
-                for oy in range( -sum_dist, sum_dist ):
-                    val += image[ (p[1] + oy) * camera.width + p[0] + ox ]
-            data.append( val )
+            for ox in range(-sum_dist, sum_dist):
+                for oy in range(-sum_dist, sum_dist):
+                    val += image[(p[1] + oy) * camera.width + p[0] + ox]
+            data.append(val)
         return data
 
-    def binStdrderr(self, n, p, z=1.0):
+    def binstdrderr(self, n, p, z=1.0):
         # finds standard error for a binomial distribution
         # n = # of runs, p = proportion of successes
         se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
@@ -188,15 +173,15 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "usage: {0} <nruns> <high freq (MHz)> <low freq (MHz)> \
             <freq step(MHz)> <1762 pulse length (us)> <ion_positions> \
-            <output>".format( sys.argv[0] )
-        sys.exit( 0 )
-    nruns = int( sys.argv[1] )
-    current_freq = float( sys.argv[2] )
-    stop_freq = float( sys.argv[3] )
-    freq_step = float( sys.argv[4] )
-    pulse_len = int( sys.argv[5] )
+            <output>".format(sys.argv[0])
+        sys.exit(0)
+    nruns = int(sys.argv[1])
+    current_freq = float(sys.argv[2])
+    stop_freq = float(sys.argv[3])
+    freq_step = float(sys.argv[4])
+    pulse_len = int(sys.argv[5])
     ions = sys.argv[6]
     output = sys.argv[7]
 
-    Experiment( nruns, current_freq, stop_freq, freq_step, pulse_len,
-        ions, output, None )
+    Experiment(nruns, current_freq, stop_freq, freq_step, pulse_len,
+               ions, output, None)
