@@ -24,7 +24,7 @@ class Experiment:
         reorder_time = 0.2
 
         output = open(out, 'w')
-        desired_bright_number = sum(map(lambda x: 1 if  else 0, desired_order))
+        desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
         debug = open("debug.dat", 'w')
         try:
             ion_positions = []
@@ -49,7 +49,7 @@ class Experiment:
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
             threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
-    
+
             if threshold > np.mean(brights) - 2.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
