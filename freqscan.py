@@ -1,4 +1,3 @@
-
 import time
 
 from luca import Luca
@@ -17,19 +16,19 @@ class Experiment:
     Chans = ",".join( [PockelsChan, RedChan,
         BlueChan, OrangeChan, ShelveChan] )
 
-    def __init__( self, nruns, experiment, ions, desired_order, out, conn=None ):
-        #0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
+    def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
+        # 0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
         camera = Luca()
-        freq_src = FreqDriver( u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR' )
-        ni = NiDriver( self.Chans )
+        freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
+        ni = NiDriver(self.Chans)
         reorder_time = 0.5
 
-        output = open( out, 'w' )
+        output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
 
         try:
             ion_positions = []
-            with open( ions, 'r' ) as ionfile:
+            with open(ions, 'r') as ionfile:
                 for l in ionfile:
                     pos = tuple( int(x) for x in l.split() )
                     ion_positions.append( pos )
@@ -55,24 +54,23 @@ class Experiment:
             while experiment.step( freq_src, ni ):
                 for i in range( nruns ):
                     data = self.build_data(
-                        camera, ion_positions, camera.get_image() )
-                    ion_order = [ d > threshold for d in data ]
+                        camera, ion_positions, camera.get_image())
+                    ion_order = [d > threshold for d in data]
 
                     bg.append( data[-1] )
                     if len( bg ) > 200:
                         bg = bg[100:]
                     threshold = np.mean(bg) + 3*np.std(bg)
                     print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                          threshold + 4000)
+                          threshold + np.std(brights))
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
                         if curr_bright_number == desired_bright_number:
-
-                            r = NiSimpleDriver( self.RedChan )
-                            r.write_single( False )
-                            time.sleep( reorder_time )
-                            r.write_single( True )
+                            r = NiSimpleDriver(self.RedChan)
+                            r.write_single(False)
+                            time.sleep(reorder_time)
+                            r.write_single(True)
                             r.close()
                         time.sleep( 0.3 )
 
@@ -82,7 +80,7 @@ class Experiment:
                         if np.max(data) < threshold + 2 * np.std(bright):
                             print("ions getting too dim.")
                             time.sleep(5)
-                    
+
 
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
@@ -93,52 +91,50 @@ class Experiment:
                                 reorder_time *= 1.1
                             else:
                                 reorder_time *= 0.9
-                            print( "New reorder time: {}".format( reorder_time ) )
+                            print("New reorder time: {}".format(reorder_time))
                         if reorder_time < 0.1:  reorder_time = 0.1
                         if reorder_time > 10.0: reorder_time = 10.0
 
                         if conn is not None:
-                            outdata = [str( experiment.control_var() )]
-                            outdata.extend( str(d) for d in data )
-                            outdata.extend( str(d) for d in data )
-                            conn.send( 'reordata ' + '\t'.join(outdata) )
+                            outdata = [str(experiment.control_var())]
+                            outdata.extend(str(d) for d in data)
+                            outdata.extend(str(d) for d in data)
+                            conn.send('reordata ' + '\t'.join(outdata))
 
                     ni.run()
                     postdata = self.build_data(
                         camera, ion_positions, camera.get_image())
                     data.extend(postdata)
 
-                    outdata = [str( experiment.control_var() )]
-                    outdata.extend( str(d) for d in data )
+                    outdata = [str(experiment.control_var())]
+                    outdata.extend(str(d) for d in data)
                     print '\t'.join(outdata)
                     if conn is not None:
-                        conn.send('\t'.join(outdata) )
-                    output.write( '\t'.join(outdata) + '\n' )
+                        conn.send('\t'.join(outdata))
+                    output.write('\t'.join(outdata) + '\n')
                     output.flush()
 
-                    d = NiSimpleDriver( self.OrangeChan )
-                    d.write_single( True )
+                    d = NiSimpleDriver(self.OrangeChan)
+                    d.write_single(True)
                     d.close()
 
-                    time.sleep( 0.2 )
-
+                    time.sleep(0.2)
 
         finally:
             camera.shutdown()
 
-
-    def build_data( self, camera, ionpos, image ):
+    def build_data(self, camera, ionpos, image):
         data = []
         sum_dist = 10
         for p in ionpos:
             val = 0
-            for ox in range( -sum_dist, sum_dist ):
-                for oy in range( -sum_dist, sum_dist ):
-                    val += image[ (p[1] + oy) * camera.width + p[0] + ox ]
-            data.append( val )
+            for ox in range(-sum_dist, sum_dist):
+                for oy in range(-sum_dist, sum_dist):
+                    val += image[(p[1] + oy) * camera.width + p[0] + ox]
+            data.append(val)
         return data
 
-    def binStdrderr(self, n, p, z=1.0):
+    def binstdrderr(self, n, p, z=1.0):
         # finds standard error for a binomial distribution
         # n = # of runs, p = proportion of successes
         se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
@@ -150,15 +146,15 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "usage: {0} <nruns> <high freq (MHz)> <low freq (MHz)> \
             <freq step(MHz)> <1762 pulse length (us)> <ion_positions> \
-            <output>".format( sys.argv[0] )
-        sys.exit( 0 )
-    nruns = int( sys.argv[1] )
-    current_freq = float( sys.argv[2] )
-    stop_freq = float( sys.argv[3] )
-    freq_step = float( sys.argv[4] )
-    pulse_len = int( sys.argv[5] )
+            <output>".format(sys.argv[0])
+        sys.exit(0)
+    nruns = int(sys.argv[1])
+    current_freq = float(sys.argv[2])
+    stop_freq = float(sys.argv[3])
+    freq_step = float(sys.argv[4])
+    pulse_len = int(sys.argv[5])
     ions = sys.argv[6]
     output = sys.argv[7]
 
-    Experiment( nruns, current_freq, stop_freq, freq_step, pulse_len,
-        ions, output, None )
+    Experiment(nruns, current_freq, stop_freq, freq_step, pulse_len,
+               ions, output, None)
