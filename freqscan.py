@@ -24,8 +24,8 @@ class Experiment:
         reorder_time = 0.2
 
         output = open( out, 'w' )
-        desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
-
+        desired_bright_number = sum(map(lambda x: 1 if  else 0, desired_order))
+        debug = open( "debug.dat", 'w')
         try:
             ion_positions = []
             with open( ions, 'r' ) as ionfile:
@@ -36,36 +36,54 @@ class Experiment:
             print(ion_positions)
             bg = []
             brights = []
+	    crosstalk = []
             for i in range(30):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
-                bright = (x if x > (np.max(data) + np.mean(bg)) / 2 for x in data)
-                brights.append(bright)
-            crosstalk = np.std(brights) * np.sqrt(0.16)  # estimate 16% crosstalk. Could measure programatically.
-            threshold = np.mean(bg) + 3 * np.std(bg) + 2 * crosstalk
+		data.sort()
+		data.reverse()
+		brights.extend(data[0:desired_bright_number])
+		crosstalk.append(data[desired_bright_number])
+		print(np.max(data), np.mean(bg), np.mean(crosstalk))
 
-            if threshold > np.mean(bright) - 3 * np.std(bright):
-                raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
+#            crosstalk = np.std(brights) * np.sqrt(0.25)  # estimate 25% crosstalk. Could measure programatically.
+#            threshold = (np.mean(crosstalk) + 3.5 * np.std(brights))
+
+            threshold = (np.mean(brights) + np.mean(bg) - np.std(bg))/2.
+
+            if threshold > np.mean(brights) - 2.5 * np.std(brights):
+               raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
             print("bg, threshold:")
-            print(bg, threshold)
+            print(np.mean(bg), threshold)
+	    i = 0 #counter to keep track of how often debugging information is displayed in console output
             while experiment.step( freq_src, ni ):
                 for i in range( nruns ):
+		    i += 1
+
                     data = self.build_data(
                         camera, ion_positions, camera.get_image() )
                     ion_order = [ d > threshold for d in data ]
 
                     bg.append( data[-1] )
-                    if len( bg ) > 200:
-                        bg = bg[100:]
-                    threshold = np.mean(bg) + 3*np.std(bg)
-                    print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                          threshold + 3000)
+		    for x in data:
+		        if x > (np.mean(brights) + np.mean(bg))/2.:
+			    brights.append(x)
+                    if len(brights) > 20:
+		        brights = brights[10:]
+                    if len( bg ) > 20:
+                        bg = bg[10:]
+#                    threshold = (np.mean(crosstalk) + np.mean(brights))/2.
+#                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
+                    if i % 10 == 0:
+                        print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
+                          threshold + np.std(brights))
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
+
                         if curr_bright_number == desired_bright_number:
 
                             r = NiSimpleDriver( self.RedChan )
@@ -75,18 +93,26 @@ class Experiment:
                             r.close()
                         time.sleep( 0.3 )
 
-                        #camera.get_image() # Inconsistent results on whether this is necessary.
                         data = self.build_data(
                             camera, ion_positions, camera.get_image() )
-                        while np.max(data) < threshold + 3000:
-                            print("ions are too dim. Brightest:")
+			j = 0
+                        while np.max(data) < threshold + np.std(brights):
+			    j += 1
+                            print("ions are too dim. Brights:")
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image() )
-                            print(np.max(data))
-                            print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                          threshold + 3000)
-                    
+			    sorted = np.array(data)
+			    sorted.sort()
 
+                            print(sorted[0:desired_bright_number])
+                            if j % 5 == 0:
+			        print("bg mean:", np.mean(bg),)
+			        print("bg std :", np.std(bg))
+			        print("Threshhold:", threshold)
+			        print("bright std:", np.std(brights))
+			        print("Min Brightest:",threshold + 2 * np.std(brights))
+			        time.sleep(1)
+                   
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
                         print( "{} -> {}".format( prev_order, ion_order ) )
@@ -97,8 +123,9 @@ class Experiment:
                             else:
                                 reorder_time *= 0.9
                             print( "New reorder time: {}".format( reorder_time ) )
-                            print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
-                          threshold + 3000)
+			    print(np.max(data))
+                            #print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
+                            #threshold + np.std(brights))
                         if reorder_time < 0.1:  reorder_time = 0.1
                         if reorder_time > 10.0: reorder_time = 10.0
 
