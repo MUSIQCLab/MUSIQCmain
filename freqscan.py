@@ -48,7 +48,7 @@ class Experiment:
 
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
-            threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+            threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (np.std(bg) + np.std(brights))
 
             if threshold > np.mean(brights) - 2.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
@@ -74,7 +74,9 @@ class Experiment:
                         bg = bg[10:]
                     # threshold = (np.mean(crosstalk) + np.mean(brights))/2.
                     #                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
-                    threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+                    # threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+                    threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (
+                    np.std(bg) + np.std(brights))
                     if i % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
@@ -116,12 +118,12 @@ class Experiment:
 
                         if any( prev_order ):
                             if prev_order == ion_order:
-                                reorder_time *= 1.1
+                                reorder_time *= 1.05
                             else:
-                                reorder_time *= 0.9
+                                reorder_time *= 0.95
                             print("New reorder time: {}".format(reorder_time))
                         print(np.max(data))
-                        if reorder_time < 0.05:  reorder_time = 0.05
+                        if reorder_time < 0.01:  reorder_time = 0.01
                         if reorder_time > 10.0: reorder_time = 10.0
 
                         if conn is not None:
