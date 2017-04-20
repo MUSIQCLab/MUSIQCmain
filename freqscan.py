@@ -66,7 +66,7 @@ class Experiment:
 
                     bg.append(data[-1])
                     for x in data:
-                        if x > (np.mean(brights) + np.mean(bg)) / 2.:
+                        if x > threshold:
                             brights.append(x)
                     if len(brights) > 12:
                         brights = brights[10:]
@@ -74,9 +74,9 @@ class Experiment:
                         bg = bg[10:]
                     # threshold = (np.mean(crosstalk) + np.mean(brights))/2.
                     #                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
-                    # threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
-                    threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (
-                    np.std(bg) + np.std(brights))
+                    threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+                    # threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (
+                    # np.std(bg) + np.std(brights))
                     if i % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
@@ -94,9 +94,14 @@ class Experiment:
                         camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
                             camera, ion_positions, camera.get_image())
-                        j = 0
+                        for x in data:
+                            if x > threshold:
+                                brights.append(x)
+                        if len(brights) > 12:
+                            brights = brights[10:]
+                        dim_iterations = 0  #how many times have we been dim?
                         while np.max(data) < threshold + np.std(brights):
-                            j += 1
+                            dim_iterations += 1
                             print("ions are too dim. Brights:")
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image())
@@ -104,12 +109,13 @@ class Experiment:
                             sorted.sort()
 
                             print(sorted[0:desired_bright_number])
-                            if j % 5 == 0:
+                            if dim_iterations % 5 == 0:
+                                threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
                                 print("bg mean:", np.mean(bg),)
                                 print("bg std :", np.std(bg))
                                 print("Threshhold:", threshold)
                                 print("bright std:", np.std(brights))
-                                print("Min Brightest:", threshold + 2 * np.std(brights))
+                                print("Min Brightest:", threshold + np.std(brights))
                             time.sleep(1)
 
                         prev_order, ion_order = ion_order, \
