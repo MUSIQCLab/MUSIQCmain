@@ -68,7 +68,7 @@ class Experiment:
                     for x in data:
                         if x > (np.mean(brights) + np.mean(bg)) / 2.:
                             brights.append(x)
-                    if len(brights) > 20:
+                    if len(brights) > 12:
                         brights = brights[10:]
                     if len(bg) > 20:
                         bg = bg[10:]
@@ -89,7 +89,7 @@ class Experiment:
                             r.close()
                         time.sleep( 0.3 )
 
-                        #camera.get_image() # Inconsistent results on whether this is necessary.
+                        camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
                             camera, ion_positions, camera.get_image())
                         j = 0
