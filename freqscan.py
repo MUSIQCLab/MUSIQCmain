@@ -74,6 +74,7 @@ class Experiment:
                         bg = bg[10:]
                     # threshold = (np.mean(crosstalk) + np.mean(brights))/2.
                     #                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
+                    threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
                     if i % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
@@ -120,7 +121,7 @@ class Experiment:
                                 reorder_time *= 0.9
                             print("New reorder time: {}".format(reorder_time))
                         print(np.max(data))
-                        if reorder_time < 0.1:  reorder_time = 0.1
+                        if reorder_time < 0.05:  reorder_time = 0.05
                         if reorder_time > 10.0: reorder_time = 10.0
 
                         if conn is not None:
