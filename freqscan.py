@@ -48,7 +48,7 @@ class Experiment:
 
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
-            threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (np.std(bg) + np.std(brights))
+            threshold = threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
 
             if threshold > np.mean(brights) - 2.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
