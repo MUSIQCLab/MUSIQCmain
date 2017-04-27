@@ -39,7 +39,7 @@ class Experiment:
             bg = []
             brights = []
             crosstalk = []
-            for i in range(30):
+            for i in range(12):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
@@ -191,7 +191,7 @@ class Experiment:
         left_border = ion_positions[0][0] - 40
         right_border = ion_positions[-2][0] + 40
         vert = ion_positions[0][1]
-        filtered = gaussian_filter(raw[left_border - 15:right_border + 15, vert - 15, vert + 15], 3)
+        filtered = gaussian_filter(raw[left_border - 15:right_border + 15, vert - 15:vert + 15], 3)
         peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
 
         shifts = [peak[0] - position[0] if 1 < np.abs(peak[0] - position[0]) < 15 else 0
