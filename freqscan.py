@@ -199,7 +199,7 @@ class Experiment:
         small = raw[141:292, 440:480]
         print(small.shape)
         filtered = gaussian_filter(small, 3)
-        peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
+        peaks = peak_local_max(filtered, threshold_rel=0.7)
         print("peaks:")
         print(peaks)
         shifts = [left_border + peak[0] - position[0] if 1 < np.abs(left_border + peak[0] - position[0]) < 15
