@@ -200,12 +200,15 @@ class Experiment:
         print(small.shape)
         filtered = gaussian_filter(small, 3)
         peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
-
-        shifts = [peak[0] - position[0] if 1 < np.abs(peak[0] - position[0]) < 15 else 0
-                  for peak in peaks for position in ion_positions]
+        print("peaks:")
+        print(peaks)
+        shifts = [left_border + peak[0] - position[0] if 1 < np.abs(left_border + peak[0] - position[0]) < 15
+                  else 0 for peak in peaks for position in ion_positions]
+        print("shifts:")
+        print(shifts)
         total_shift = np.sum(shifts)
         shift_sign = np.sign(total_shift)
-        if total_shift > 3 or total_shift < -3:
+        if total_shift > 2 or total_shift < -2:
             ion_positions = [(position[0] + 2 * shift_sign, position[1]) for position in ion_positions]
 
         camera.set_exposure(normal_exposure)
