@@ -184,7 +184,7 @@ class Experiment:
         return se
 
     def find_shift(self, camera, ion_positions):
-        normal_exposure = luca.exposure_time
+        normal_exposure = camera.exposure_time
         camera.set_exposure(5)
 
         raw = camera.get_image()
