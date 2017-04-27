@@ -6,6 +6,8 @@ from ni_digital_io import NiDriver
 from ni_simple_digital_io import NiDriver as NiSimpleDriver
 from experiment_base import *
 import numpy as np
+from skimage.feature import peak_local_max
+from scipy.ndimage.filters import gaussian_filter
 
 class Experiment:
     PockelsChan = "PXI1Slot9/port0/line2"
@@ -48,7 +50,7 @@ class Experiment:
 
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
-            threshold = threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+            threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
 
             if threshold > np.mean(brights) - 2.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
@@ -58,6 +60,8 @@ class Experiment:
             print(np.mean(bg), threshold)
             i = 0  # counter to keep track of how often debugging information is displayed in console output
             while experiment.step( freq_src, ni ):
+                ion_positions = self.find_shift(camera, ion_positions)
+                print("new ion positions:", ion_positions)
                 for i in range( nruns ):
                     i += 1
                     data = self.build_data(
@@ -156,6 +160,8 @@ class Experiment:
                     d.close()
 
                     time.sleep(0.4)
+                time.sleep(1)
+
 
         finally:
             camera.shutdown()
@@ -176,6 +182,27 @@ class Experiment:
         # n = # of runs, p = proportion of successes
         se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
         return se
+
+    def find_shift(self, camera, ion_positions):
+        normal_exposure = luca.exposure_time
+        camera.set_exposure(5)
+
+        raw = camera.get_image()
+        left_border = ion_positions[0][0] - 40
+        right_border = ion_positions[-2][0] + 40
+        vert = ion_positions[0][1]
+        filtered = gaussian_filter(raw[left_border - 15:right_border + 15, vert - 15, vert + 15], 3)
+        peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
+
+        shifts = [peak[0] - position[0] if 1 < np.abs(peak[0] - position[0]) < 15 else 0
+                  for peak in peaks for position in ion_positions]
+        total_shift = np.sum(shifts)
+        shift_sign = np.sign(total_shifts)
+        if total_shift > 3 or total_shift < -3:
+            ion_positions = [(position[0] + 2 * shift_sign, position[1]) for position in ion_positions]
+
+        camera.set_exposure(normal_exposure)
+        return ion_positions
 
 
 if __name__ == '__main__':
