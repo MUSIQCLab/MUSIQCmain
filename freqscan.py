@@ -192,7 +192,8 @@ class Experiment:
         right_border = ion_positions[-2][0] + 15
         vert = ion_positions[0][1]
         print("left, right, vert:", left_border, right_border, vert)
-        filtered = gaussian_filter(raw[left_border:right_border, (vert - 15):(vert + 15)], 3)
+        small = raw[left_border:right_border, (vert - 15):(vert + 15)]
+        filtered = gaussian_filter(small, 3)
         peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
 
         shifts = [peak[0] - position[0] if 1 < np.abs(peak[0] - position[0]) < 15 else 0
