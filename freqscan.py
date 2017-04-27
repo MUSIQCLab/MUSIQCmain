@@ -189,7 +189,7 @@ class Experiment:
         normal_exposure = camera.exposure_time
         camera.set_exposure(5)
 
-        raw = camera.get_image()
+        raw = np.array(camera.get_image()).reshape(1002, 1004)
         left_border = int(ion_positions[0][0] - 15)
         right_border = int(ion_positions[-2][0] + 15)
         vert = int(ion_positions[0][1])
