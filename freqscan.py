@@ -195,7 +195,9 @@ class Experiment:
         vert = int(ion_positions[0][1])
         print("left, right, vert:", left_border, right_border, vert)
         # small = raw[left_border:right_border, (vert - 15):(vert + 15)]
-        small = raw[141:292, (464 - 15):(464 + 15)]
+        print(raw.shape)
+        small = raw[141:292, 440:480]
+        print(small.shape)
         filtered = gaussian_filter(small, 3)
         peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
 
