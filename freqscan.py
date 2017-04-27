@@ -28,6 +28,7 @@ class Experiment:
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
         debug = open("debug.dat", 'w')
+
         try:
             ion_positions = []
             with open(ions, 'r') as ionfile:
@@ -36,6 +37,7 @@ class Experiment:
                     ion_positions.append( pos )
             print("ion_positions:")
             print(ion_positions)
+            ion_positions = self.find_shift(camera, ion_positions)
             bg = []
             brights = []
             crosstalk = []
@@ -192,7 +194,8 @@ class Experiment:
         right_border = int(ion_positions[-2][0] + 15)
         vert = int(ion_positions[0][1])
         print("left, right, vert:", left_border, right_border, vert)
-        small = raw[left_border:right_border, (vert - 15):(vert + 15)]
+        # small = raw[left_border:right_border, (vert - 15):(vert + 15)]
+        small = raw[141:292, (464 - 15):(464 + 15)]
         filtered = gaussian_filter(small, 3)
         peaks = peak_local_max(filtered, min_distance=25, threshold_rel=0.7)
 
