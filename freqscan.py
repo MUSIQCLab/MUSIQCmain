@@ -204,7 +204,7 @@ class Experiment:
         shifts = [peak[0] - position[0] if 1 < np.abs(peak[0] - position[0]) < 15 else 0
                   for peak in peaks for position in ion_positions]
         total_shift = np.sum(shifts)
-        shift_sign = np.sign(total_shifts)
+        shift_sign = np.sign(total_shift)
         if total_shift > 3 or total_shift < -3:
             ion_positions = [(position[0] + 2 * shift_sign, position[1]) for position in ion_positions]
 
