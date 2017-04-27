@@ -21,7 +21,7 @@ class Experiment:
         camera = Luca()
         freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
         ni = NiDriver(self.Chans)
-        reorder_time = 0.2
+        reorder_time = 0.05
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
@@ -89,7 +89,7 @@ class Experiment:
                             time.sleep(reorder_time)
                             r.write_single(True)
                             r.close()
-                        time.sleep( 0.3 )
+                        time.sleep(0.4)
 
                         camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
@@ -155,7 +155,7 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.2)
+                    time.sleep(0.4)
 
         finally:
             camera.shutdown()
