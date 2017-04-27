@@ -108,7 +108,20 @@ class Luca:
             print exc
             return False
         return True
-        
+
+    def set_exposure(self, exposure_time):
+        if self.acquiring:
+            return False
+
+        he = self._handle_error
+        try:
+            he(self.atmcd.SetExposureTime(c_float(exposure_time)), "SetExposureTime")
+            he(self.atmcd.SetEMCCDGain(c_long(self.EMCCD_gain)), "SetEMCCDGain")
+        except ValueError as exc:
+            print exc
+            return False
+        return True
+
     def _bin_size_changed( self ):
         self.set_image_and_binning()
         
