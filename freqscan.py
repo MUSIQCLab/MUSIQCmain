@@ -188,9 +188,9 @@ class Experiment:
         camera.set_exposure(5)
 
         raw = camera.get_image()
-        left_border = ion_positions[0][0] - 15
-        right_border = ion_positions[-2][0] + 15
-        vert = ion_positions[0][1]
+        left_border = int(ion_positions[0][0] - 15)
+        right_border = int(ion_positions[-2][0] + 15)
+        vert = int(ion_positions[0][1])
         print("left, right, vert:", left_border, right_border, vert)
         small = raw[left_border:right_border, (vert - 15):(vert + 15)]
         filtered = gaussian_filter(small, 3)
