@@ -37,7 +37,7 @@ class Experiment:
             bg = []
             brights = []
             crosstalk = []
-            for i in range(30):
+            for i in range(12):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
@@ -50,7 +50,7 @@ class Experiment:
 
             threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
 
-            if threshold > np.mean(brights) - 2 * np.std(brights):
+            if threshold > np.mean(brights) - 1.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
@@ -124,9 +124,9 @@ class Experiment:
 
                         if any( prev_order ):
                             if prev_order == ion_order:
-                                reorder_time *= 1.05
+                                reorder_time *= 1.1
                             else:
-                                reorder_time *= 0.95
+                                reorder_time *= 0.9
                             print("New reorder time: {}".format(reorder_time))
                         print(np.max(data))
                         if reorder_time < 0.01:  reorder_time = 0.01
@@ -155,14 +155,14 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.4)
+                    time.sleep(0.3)
 
         finally:
             camera.shutdown()
 
     def build_data(self, camera, ionpos, image):
         data = []
-        sum_dist = 10
+        sum_dist = 12
         for p in ionpos:
             val = 0
             for ox in range(-sum_dist, sum_dist):
