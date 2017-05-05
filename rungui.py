@@ -44,7 +44,7 @@ class App:
                                               fill=tk.BOTH, expand=1)
         self.data_axes.grid(True)
 
-        self.plot()
+        self.plot(0,0)
 
         self.tick()
         self.master.mainloop()
@@ -65,11 +65,11 @@ class App:
                 self.background = self.background[100:]
 
             bkg = np.mean( self.background )
-	    thresh = 10*np.std( self.background )
+#	    thresh = 4*np.std( self.background )
 
             self.before = np.array( new_data[1:nions+1], dtype=float )
-	    bright = np.max(self.before) - bkg
-	    thresh = bright/3.
+	    bright = np.mean(self.before) - bkg
+	    thresh = bright/2.
 
             self.after = np.array( new_data[nions+2:2*nions+2], dtype=float )
 
@@ -86,17 +86,17 @@ class App:
                         self.occurences[time][i] += 1
                     if before_ions[i] and not after_ions[i]:
                         self.shelves[time][i] += 1
-            self.plot()
+            self.plot(bkg, bright)
         self.master.after(500, self.tick)
 
-    def plot(self):
+    def plot(self, bkg, bright):
         """"Update data plots from new data."""
         self.before_axes.clear()
         self.after_axes.clear()
         self.before_axes.bar( np.arange(len(self.before)), self.before )
         self.after_axes.bar( np.arange(len(self.after)), self.after )
-        self.before_axes.set_ylim( 300000, 345000 )
-        self.after_axes.set_ylim( 300000, 345000 )
+        self.before_axes.set_ylim( bkg, bright*2 )
+        self.after_axes.set_ylim( bkg, bright*2 )
         self.bright_canvas.draw()
 
         keys = list(sorted(self.occurences.keys()))

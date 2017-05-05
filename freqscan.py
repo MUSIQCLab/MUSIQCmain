@@ -37,7 +37,7 @@ class Experiment:
             bg = []
             brights = []
             crosstalk = []
-            for i in range(12):
+            for i in range(15):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
                 bg.append( data[-1] )
@@ -45,10 +45,16 @@ class Experiment:
             data.reverse()
             brights.extend(data[0:desired_bright_number])
             crosstalk.append(data[desired_bright_number])
-
+            bg_0 = np.mean(bg)
+	    bg = [b - bg_0 for b in bg] 
+            brights = [br - bg_0 for br in brights]
+	    data = [datum - bg_0 for datum in data]
+	    crosstalk = [cross - bg_0 for cross in crosstalk]
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
-            threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+
+            threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
+	
 
             if threshold > np.mean(brights) - 1.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
@@ -62,19 +68,20 @@ class Experiment:
                     i += 1
                     data = self.build_data(
                         camera, ion_positions, camera.get_image())
+		    data = [datum - bg_0 for datum in data]
                     ion_order = [d > threshold for d in data]
 
                     bg.append(data[-1])
                     for x in data:
                         if x > threshold:
                             brights.append(x)
-                    if len(brights) > 12:
-                        brights = brights[10:]
+                    if len(brights) > 20:
+                        brights = brights[15:]
                     if len(bg) > 20:
-                        bg = bg[10:]
+                        bg = bg[15:]
                     # threshold = (np.mean(crosstalk) + np.mean(brights))/2.
                     #                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
-                    threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+                    threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
                     # threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (
                     # np.std(bg) + np.std(brights))
                     if i % 10 == 0:
@@ -89,28 +96,32 @@ class Experiment:
                             time.sleep(reorder_time)
                             r.write_single(True)
                             r.close()
-                        time.sleep(0.4)
+                        time.sleep(0.1)
 
-                        camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
+                        #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
                             camera, ion_positions, camera.get_image())
+			data = [datum - bg_0 for datum in data]
                         for x in data:
                             if x > threshold:
                                 brights.append(x)
-                        if len(brights) > 12:
-                            brights = brights[10:]
+                        if len(brights) > 20:
+                            brights = brights[15:]
                         dim_iterations = 0  #how many times have we been dim?
-                        while np.max(data) < threshold + np.std(brights):
+#                        while np.max(data) < threshold + np.std(brights):
+                        while np.mean(brights) < np.mean(bg) + 3 * np.std(bg) or np.mean(brights) < threshold + 0.7 * np.std(brights):
                             dim_iterations += 1
-                            print("ions are too dim. Brights:")
+                            print("ions are very dim. Possibly uncool or melted. Bright values:")
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image())
+			    data = [datum - bg_0 for datum in data]
+			    print(data)
                             sorted = np.array(data)
                             sorted.sort()
 
                             print(sorted[0:desired_bright_number])
-                            if dim_iterations % 5 == 0:
-                                threshold = (np.mean(brights) + np.mean(bg) - np.std(bg)) / 2.
+                            if dim_iterations % 10 == 0:
+                                threshold = self.calculate_threshold(np.mean(brights),np.mean(bg))
                                 print("bg mean:", np.mean(bg),)
                                 print("bg std :", np.std(bg))
                                 print("Threshhold:", threshold)
@@ -120,13 +131,15 @@ class Experiment:
 
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
+			if ion_order == desired_order:
+			    time.sleep(0.2)
                         print( "{} -> {}".format( prev_order, ion_order ) )
 
                         if any( prev_order ):
                             if prev_order == ion_order:
-                                reorder_time *= 1.1
+                                reorder_time *= 1.2
                             else:
-                                reorder_time *= 0.9
+                                reorder_time *= 0.83333
                             print("New reorder time: {}".format(reorder_time))
                         print(np.max(data))
                         if reorder_time < 0.01:  reorder_time = 0.01
@@ -141,8 +154,9 @@ class Experiment:
                     ni.run()
                     postdata = self.build_data(
                         camera, ion_positions, camera.get_image())
+                    postdata = [datum - bg_0 for datum in postdata]
                     data.extend(postdata)
-
+		    data = [round(datum) for datum in data]
                     outdata = [str(experiment.control_var())]
                     outdata.extend(str(d) for d in data)
                     print '\t'.join(outdata)
@@ -155,7 +169,7 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.3)
+                    time.sleep(0.2)
 
         finally:
             camera.shutdown()
@@ -177,6 +191,8 @@ class Experiment:
         se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
         return se
 
+    def calculate_threshold(self, bright, bg):
+        return (bright * 0.4 + bg * 0.6)
 
 if __name__ == '__main__':
     import sys
