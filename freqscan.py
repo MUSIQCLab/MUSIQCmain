@@ -118,6 +118,8 @@ class Experiment:
                             print(data)
                             sorted = np.array(data)
                             sorted.sort()
+                            if np.max(data) > 3 * np.std(bg):
+                                break
 
                             d = NiSimpleDriver(self.OrangeChan)
                             d.write_single(True)
