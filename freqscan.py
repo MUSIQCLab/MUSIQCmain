@@ -112,6 +112,7 @@ class Experiment:
                         while np.mean(brights) < np.mean(bg) + 3 * np.std(bg) or np.mean(brights) < threshold + 0.7 * np.std(brights):
                             dim_iterations += 1
                             print("ions are very dim. Possibly uncool or melted. Bright values:")
+			    print(str(experiment.control_var()))
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image())
 			    data = [datum - bg_0 for datum in data]
@@ -169,7 +170,7 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.2)
+                    time.sleep(0.5)
 
         finally:
             camera.shutdown()
