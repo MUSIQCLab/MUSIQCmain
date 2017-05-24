@@ -44,7 +44,7 @@ class App:
                                               fill=tk.BOTH, expand=1)
         self.data_axes.grid(True)
 
-        self.plot(0,0)
+        self.plot(0,1)
 
         self.tick()
         self.master.mainloop()
@@ -65,11 +65,11 @@ class App:
                 self.background = self.background[100:]
 
             bkg = np.mean( self.background )
-#	    thresh = 4*np.std( self.background )
+#	        thresh = 4*np.std( self.background )
 
             self.before = np.array( new_data[1:nions+1], dtype=float )
-	    bright = np.mean(self.before) - bkg
-	    thresh = bright/2.
+            bright = np.mean(self.before) - bkg
+            thresh = bright * 0.4
 
             self.after = np.array( new_data[nions+2:2*nions+2], dtype=float )
 

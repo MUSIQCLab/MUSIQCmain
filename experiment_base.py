@@ -1,5 +1,5 @@
 class ExperimentBase:
-    POCKEL_TIME = 2000  # should be altered for new pockel cell.
+    POCKEL_TIME = 200
     RIGOL_VOLTAGE = 2.5
 
     Pockels = 1 << 2

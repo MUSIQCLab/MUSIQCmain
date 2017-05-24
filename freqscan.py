@@ -7,6 +7,7 @@ from ni_simple_digital_io import NiDriver as NiSimpleDriver
 from experiment_base import *
 import numpy as np
 
+
 class Experiment:
     PockelsChan = "PXI1Slot9/port0/line2"
     RedChan = "PXI1Slot9/port0/line7"
@@ -14,7 +15,7 @@ class Experiment:
     OrangeChan = "PXI1Slot9/port0/line5"
     ShelveChan = "PXI1Slot9/port0/line1"
     Chans = ",".join( [PockelsChan, RedChan,
-        BlueChan, OrangeChan, ShelveChan] )
+                       BlueChan, OrangeChan, ShelveChan] )
 
     def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
         # 0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
@@ -46,15 +47,13 @@ class Experiment:
             brights.extend(data[0:desired_bright_number])
             crosstalk.append(data[desired_bright_number])
             bg_0 = np.mean(bg)
-	    bg = [b - bg_0 for b in bg] 
+            bg = [b - bg_0 for b in bg]
             brights = [br - bg_0 for br in brights]
-	    data = [datum - bg_0 for datum in data]
-	    crosstalk = [cross - bg_0 for cross in crosstalk]
+            data = [datum - bg_0 for datum in data]
+            crosstalk = [cross - bg_0 for cross in crosstalk]
             print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
 
-
             threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
-	
 
             if threshold > np.mean(brights) - 1.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
@@ -68,7 +67,7 @@ class Experiment:
                     i += 1
                     data = self.build_data(
                         camera, ion_positions, camera.get_image())
-		    data = [datum - bg_0 for datum in data]
+                    data = [datum - bg_0 for datum in data]
                     ion_order = [d > threshold for d in data]
 
                     bg.append(data[-1])
@@ -101,7 +100,7 @@ class Experiment:
                         #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
                             camera, ion_positions, camera.get_image())
-			data = [datum - bg_0 for datum in data]
+                        data = [datum - bg_0 for datum in data]
                         for x in data:
                             if x > threshold:
                                 brights.append(x)
@@ -112,13 +111,18 @@ class Experiment:
                         while np.mean(brights) < np.mean(bg) + 3 * np.std(bg) or np.mean(brights) < threshold + 0.7 * np.std(brights):
                             dim_iterations += 1
                             print("ions are very dim. Possibly uncool or melted. Bright values:")
-			    print(str(experiment.control_var()))
+                            print(str(experiment.control_var()))
                             data = self.build_data(
                                 camera, ion_positions, camera.get_image())
-			    data = [datum - bg_0 for datum in data]
-			    print(data)
+                            data = [datum - bg_0 for datum in data]
+                            print(data)
                             sorted = np.array(data)
                             sorted.sort()
+
+                            d = NiSimpleDriver(self.OrangeChan)
+                            d.write_single(True)
+                            d.close()
+                            time.sleep(2)
 
                             print(sorted[0:desired_bright_number])
                             if dim_iterations % 10 == 0:
@@ -132,8 +136,8 @@ class Experiment:
 
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
-			if ion_order == desired_order:
-			    time.sleep(0.2)
+                        if ion_order == desired_order:
+                            time.sleep(0.5)
                         print( "{} -> {}".format( prev_order, ion_order ) )
 
                         if any( prev_order ):
@@ -157,7 +161,7 @@ class Experiment:
                         camera, ion_positions, camera.get_image())
                     postdata = [datum - bg_0 for datum in postdata]
                     data.extend(postdata)
-		    data = [round(datum) for datum in data]
+                    data = [round(datum) for datum in data]
                     outdata = [str(experiment.control_var())]
                     outdata.extend(str(d) for d in data)
                     print '\t'.join(outdata)
