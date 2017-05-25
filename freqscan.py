@@ -95,7 +95,7 @@ class Experiment:
                             time.sleep(reorder_time)
                             r.write_single(True)
                             r.close()
-                        time.sleep(0.1)
+                        time.sleep(0.3)
 
                         #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
@@ -139,7 +139,7 @@ class Experiment:
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
                         if ion_order == desired_order:
-                            time.sleep(0.5)
+                            time.sleep(0.3)
                         print( "{} -> {}".format( prev_order, ion_order ) )
 
                         if any( prev_order ):
@@ -176,14 +176,14 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.5)
+                    time.sleep(0.4)
 
         finally:
             camera.shutdown()
 
     def build_data(self, camera, ionpos, image):
         data = []
-        sum_dist = 12
+        sum_dist = 10
         for p in ionpos:
             val = 0
             for ox in range(-sum_dist, sum_dist):
