@@ -61,8 +61,8 @@ class App:
             nions = (len(new_data) - 3) / 2
             self.background.append(float(new_data[nions + 1]))
             self.background.append(float(new_data[nions * 2 + 2]))
-            if len(self.background) > 1000:
-                self.background = self.background[100:]
+            if len(self.background) > 50:
+                self.background = self.background[30:]
 
             bkg = np.mean( self.background )
 #	        thresh = 4*np.std( self.background )
@@ -95,8 +95,8 @@ class App:
         self.after_axes.clear()
         self.before_axes.bar( np.arange(len(self.before)), self.before )
         self.after_axes.bar( np.arange(len(self.after)), self.after )
-        self.before_axes.set_ylim( bkg, bright*2 )
-        self.after_axes.set_ylim( bkg, bright*2 )
+        self.before_axes.set_ylim( bkg, bright*1.7 )
+        self.after_axes.set_ylim( bkg, bright*1.7 )
         self.bright_canvas.draw()
 
         keys = list(sorted(self.occurences.keys()))

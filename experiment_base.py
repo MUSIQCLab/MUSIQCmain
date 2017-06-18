@@ -1,5 +1,5 @@
 class ExperimentBase:
-    POCKEL_TIME = 200
+    POCKEL_TIME = 300
     RIGOL_VOLTAGE = 2.5
 
     Pockels = 1 << 2

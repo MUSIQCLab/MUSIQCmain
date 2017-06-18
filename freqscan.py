@@ -18,6 +18,7 @@ class Experiment:
                        BlueChan, OrangeChan, ShelveChan] )
 
     def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
+        print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
         # 0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
         camera = Luca()
         freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
@@ -89,13 +90,15 @@ class Experiment:
 
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
+			print("number of bright ions:")
+			print(curr_bright_number)
                         if curr_bright_number == desired_bright_number:
                             r = NiSimpleDriver(self.RedChan)
                             r.write_single(False)
                             time.sleep(reorder_time)
                             r.write_single(True)
                             r.close()
-                        time.sleep(0.1)
+                        time.sleep(1.5)
 
                         #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
                         data = self.build_data(
@@ -124,7 +127,7 @@ class Experiment:
                             d = NiSimpleDriver(self.OrangeChan)
                             d.write_single(True)
                             d.close()
-                            time.sleep(2)
+                            time.sleep(1.5)
 
                             print(sorted[0:desired_bright_number])
                             if dim_iterations % 10 == 0:
@@ -134,12 +137,11 @@ class Experiment:
                                 print("Threshhold:", threshold)
                                 print("bright std:", np.std(brights))
                                 print("Min Brightest:", threshold + np.std(brights))
-                            time.sleep(1)
 
                         prev_order, ion_order = ion_order, \
                             [ d > threshold for d in data ]
                         if ion_order == desired_order:
-                            time.sleep(0.5)
+                            time.sleep(2.5)
                         print( "{} -> {}".format( prev_order, ion_order ) )
 
                         if any( prev_order ):
@@ -149,8 +151,23 @@ class Experiment:
                                 reorder_time *= 0.83333
                             print("New reorder time: {}".format(reorder_time))
                         print(np.max(data))
-                        if reorder_time < 0.01:  reorder_time = 0.01
+                        if reorder_time < 0.04:  reorder_time = 0.04
                         if reorder_time > 10.0: reorder_time = 10.0
+			if not any(ion_order):
+			    print("all dim?")
+			    d = NiSimpleDriver(self.OrangeChan)
+			    d.write_single(True)
+			    d.close()
+                            d = NiSimpleDriver(self.RedChan)
+			    d.write_single(True)
+			    d.close()
+			    d = NiSimpleDriver(self.PockelsChan)
+			    d.write_single(False)
+			    d.close()
+			    d = NiSimpleDriver(self.BlueChan)
+			    d.write_single(True)
+			    d.close()
+			    time.sleep(3)
 
                         if conn is not None:
                             outdata = [str(experiment.control_var())]
@@ -176,14 +193,14 @@ class Experiment:
                     d.write_single(True)
                     d.close()
 
-                    time.sleep(0.5)
+                    time.sleep(0.3)
 
         finally:
             camera.shutdown()
 
     def build_data(self, camera, ionpos, image):
         data = []
-        sum_dist = 12
+        sum_dist = 10
         for p in ionpos:
             val = 0
             for ox in range(-sum_dist, sum_dist):
