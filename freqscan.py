@@ -18,8 +18,8 @@ class Experiment:
                        BlueChan, OrangeChan, ShelveChan] )
 
     def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
-        print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
-        # 0 = no sym, use order 1 = symmetrize on order 2 = no order specificity
+        for i in range(15):
+            print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
         camera = Luca()
         freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
         ni = NiDriver(self.Chans)
@@ -27,7 +27,6 @@ class Experiment:
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
-        debug = open("debug.dat", 'w')
         try:
             ion_positions = []
             with open(ions, 'r') as ionfile:
@@ -38,7 +37,7 @@ class Experiment:
             print(ion_positions)
             bg = []
             brights = []
-            crosstalk = []
+
             for i in range(15):
                 print(i)
                 data = self.build_data(camera, ion_positions, camera.get_image())
@@ -46,31 +45,30 @@ class Experiment:
             data.sort()
             data.reverse()
             brights.extend(data[0:desired_bright_number])
-            crosstalk.append(data[desired_bright_number])
+
             bg_0 = np.mean(bg)
             bg = [b - bg_0 for b in bg]
             brights = [br - bg_0 for br in brights]
             data = [datum - bg_0 for datum in data]
-            crosstalk = [cross - bg_0 for cross in crosstalk]
-            print("brightest:", np.max(data), "bg:", np.mean(bg), "x-talk", np.mean(crosstalk))
+
 
             threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
-
             if threshold > np.mean(brights) - 1.5 * np.std(brights):
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
-            print("bg, threshold:")
-            print(np.mean(bg), threshold)
+            print("brightest:", np.max(data), "bg:", np.mean(bg), "threshold:", threshold)
+
             i = 0  # counter to keep track of how often debugging information is displayed in console output
             while experiment.step( freq_src, ni ):
-                for i in range( nruns ):
+                for run in range( nruns ):
+                    # Pre-control waveform image for ion position verification:
                     i += 1
-                    data = self.build_data(
-                        camera, ion_positions, camera.get_image())
+                    data = self.build_data(camera, ion_positions, camera.get_image())
                     data = [datum - bg_0 for datum in data]
                     ion_order = [d > threshold for d in data]
 
+                    # update bright and bg averages to inform threshold
                     bg.append(data[-1])
                     for x in data:
                         if x > threshold:
@@ -79,19 +77,16 @@ class Experiment:
                         brights = brights[15:]
                     if len(bg) > 20:
                         bg = bg[15:]
-                    # threshold = (np.mean(crosstalk) + np.mean(brights))/2.
-                    #                    threshold = np.mean(crosstalk) + 2.5 * np.std(brights)
                     threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
-                    # threshold = (np.mean(brights) * np.std(brights) + np.mean(bg) * np.std(bg)) / (
-                    # np.std(bg) + np.std(brights))
                     if i % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
 
+
                     while ion_order != desired_order:
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
-			print("number of bright ions:")
-			print(curr_bright_number)
+                        print("number of bright ions:")
+                        print(curr_bright_number)
                         if curr_bright_number == desired_bright_number:
                             r = NiSimpleDriver(self.RedChan)
                             r.write_single(False)
@@ -101,16 +96,18 @@ class Experiment:
                         time.sleep(1.5)
 
                         #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
-                        data = self.build_data(
-                            camera, ion_positions, camera.get_image())
+                        data = self.build_data(camera, ion_positions, camera.get_image())
                         data = [datum - bg_0 for datum in data]
                         for x in data:
                             if x > threshold:
                                 brights.append(x)
                         if len(brights) > 20:
                             brights = brights[15:]
+
+
                         dim_iterations = 0  #how many times have we been dim?
-#                        while np.max(data) < threshold + np.std(brights):
+                        # while np.max(data) < threshold + np.std(brights):
+                        # code block to check whether ion is very dim.
                         while np.mean(brights) < np.mean(bg) + 3 * np.std(bg) or np.mean(brights) < threshold + 0.7 * np.std(brights):
                             dim_iterations += 1
                             print("ions are very dim. Possibly uncool or melted. Bright values:")
@@ -123,12 +120,10 @@ class Experiment:
                             sorted.sort()
                             if np.max(data) > 3 * np.std(bg):
                                 break
-
                             d = NiSimpleDriver(self.OrangeChan)
                             d.write_single(True)
                             d.close()
                             time.sleep(1.5)
-
                             print(sorted[0:desired_bright_number])
                             if dim_iterations % 10 == 0:
                                 threshold = self.calculate_threshold(np.mean(brights),np.mean(bg))
@@ -138,12 +133,11 @@ class Experiment:
                                 print("bright std:", np.std(brights))
                                 print("Min Brightest:", threshold + np.std(brights))
 
-                        prev_order, ion_order = ion_order, \
-                            [ d > threshold for d in data ]
+                        prev_order = ion_order
+                        ion_order = [ d > threshold for d in data ]
                         if ion_order == desired_order:
                             time.sleep(2.5)
                         print( "{} -> {}".format( prev_order, ion_order ) )
-
                         if any( prev_order ):
                             if prev_order == ion_order:
                                 reorder_time *= 1.2
@@ -153,31 +147,30 @@ class Experiment:
                         print(np.max(data))
                         if reorder_time < 0.04:  reorder_time = 0.04
                         if reorder_time > 10.0: reorder_time = 10.0
-			if not any(ion_order):
-			    print("all dim?")
-			    d = NiSimpleDriver(self.OrangeChan)
-			    d.write_single(True)
-			    d.close()
+                        if not any(ion_order):
+                            print("all dim?")
+                            d = NiSimpleDriver(self.OrangeChan)
+                            d.write_single(True)
+                            d.close()
                             d = NiSimpleDriver(self.RedChan)
-			    d.write_single(True)
-			    d.close()
-			    d = NiSimpleDriver(self.PockelsChan)
-			    d.write_single(False)
-			    d.close()
-			    d = NiSimpleDriver(self.BlueChan)
-			    d.write_single(True)
-			    d.close()
-			    time.sleep(3)
+                            d.write_single(True)
+                            d.close()
+                            d = NiSimpleDriver(self.PockelsChan)
+                            d.write_single(False)
+                            d.close()
+                            d = NiSimpleDriver(self.BlueChan)
+                            d.write_single(True)
+                            d.close()
+                            time.sleep(3)
 
-                        if conn is not None:
-                            outdata = [str(experiment.control_var())]
-                            outdata.extend(str(d) for d in data)
-                            outdata.extend(str(d) for d in data)
-                            conn.send('reordata ' + '\t'.join(outdata))
+                    if conn is not None:
+                        outdata = [str(experiment.control_var())]
+                        outdata.extend(str(d) for d in data)
+                        outdata.extend(str(d) for d in data)
+                        conn.send('reordata ' + '\t'.join(outdata))
 
                     ni.run()
-                    postdata = self.build_data(
-                        camera, ion_positions, camera.get_image())
+                    postdata = self.build_data(camera, ion_positions, camera.get_image())
                     postdata = [datum - bg_0 for datum in postdata]
                     data.extend(postdata)
                     data = [round(datum) for datum in data]
@@ -192,7 +185,6 @@ class Experiment:
                     d = NiSimpleDriver(self.OrangeChan)
                     d.write_single(True)
                     d.close()
-
                     time.sleep(0.3)
 
         finally:
@@ -209,14 +201,11 @@ class Experiment:
             data.append(val)
         return data
 
-    def binstdrderr(self, n, p, z=1.0):
-        # finds standard error for a binomial distribution
-        # n = # of runs, p = proportion of successes
-        se = z * np.sqrt((1 / (n * 1.0)) * p * (1 - p) + (1 / (4.0 * n * n)) * z * z)
-        return se
-
     def calculate_threshold(self, bright, bg):
-        return (bright * 0.4 + bg * 0.6)
+        return 5000
+        # I'm starting to realize that the dynamic threshold doesn't really work very well.
+        # I'm going to start using a static one...
+        # return (bright * 0.4 + bg * 0.6)
 
 if __name__ == '__main__':
     import sys
