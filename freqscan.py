@@ -16,10 +16,11 @@ class Experiment:
     ShelveChan = "PXI1Slot9/port0/line1"
     Chans = ",".join( [PockelsChan, RedChan,
                        BlueChan, OrangeChan, ShelveChan] )
-
-    def __init__(self, nruns, experiment, ions, desired_order, out, conn=None):
+    def __init(self):
         for i in range(15):
             print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
+
+    def run(self, nruns, experiment, ions, desired_order, out, conn=None):
         camera = Luca()
         freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
         ni = NiDriver(self.Chans)
@@ -29,7 +30,6 @@ class Experiment:
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
-        debug = open("debug.dat", 'w')
         try:
             ion_positions = []
             with open(ions, 'r') as ionfile:
@@ -81,10 +81,10 @@ class Experiment:
                     if len(bg) > 20:
                         bg = bg[15:]
                     threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
-                    if i % 10 == 0:
+                    if run % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
-                    if i % 20 == 0:
+                    if run % 20 == 0:
                         print(reorder_free_record)
                     number_between_reorder += 1
                     while ion_order != desired_order:
