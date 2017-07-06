@@ -5,7 +5,6 @@ from luca import Luca
 from freq import FreqDriver
 from ni_digital_io import NiDriver
 from ni_simple_digital_io import NiDriver as NiSimpleDriver
-from experiment_base import *
 
 import numpy as np
 
@@ -181,8 +180,8 @@ class Experiment:
             data = self.build_data(camera, ion_positions, camera.get_image(), np.array([0]))
             background.append(data[-1])
         data.sort()
-        data.reverse()
-        brightness = (data[0:desired_bright_number])
+        data = data[::-1]
+        brightness = (data[-1:-desired_bright_number])
         background = [b - np.mean(background) for b in background]
         brightness = [br - np.mean(background) for br in brightness]
         return data, background, brightness
