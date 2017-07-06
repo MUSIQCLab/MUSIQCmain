@@ -56,7 +56,7 @@ class Experiment:
 
             threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
 
-            if threshold > np.mean(brights) - 1.5 * np.std(brights):
+            if np.mean(brights) < 8000:
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
@@ -66,6 +66,7 @@ class Experiment:
             while experiment.step( freq_src, ni ):
                 for i in range( nruns ):
                     i += 1
+		    print(i)
                     data = self.build_data(
                         camera, ion_positions, camera.get_image())
                     data = [datum - bg_0 for datum in data]
@@ -167,7 +168,7 @@ class Experiment:
 			    d = NiSimpleDriver(self.BlueChan)
 			    d.write_single(True)
 			    d.close()
-			    time.sleep(3)
+			    time.sleep(1.5)
 
                         if conn is not None:
                             outdata = [str(experiment.control_var())]
@@ -216,7 +217,9 @@ class Experiment:
         return se
 
     def calculate_threshold(self, bright, bg):
-        return (bright * 0.4 + bg * 0.6)
+    
+        return (bright * 0.5 + bg * 0.5)
+      # return 8000
 
 if __name__ == '__main__':
     import sys

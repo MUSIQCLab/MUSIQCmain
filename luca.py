@@ -7,7 +7,7 @@ from ctypes.wintypes import HANDLE
 #import win32event
 
 class Luca:
-    exposure_time = 0.5
+    exposure_time = 0.75
     EMCCD_gain = 200
     bin_size = 1
     acquiring = False
