@@ -5,6 +5,8 @@ from freq import FreqDriver
 from ni_digital_io import NiDriver
 from ni_simple_digital_io import NiDriver as NiSimpleDriver
 from experiment_base import *
+from __future__ import print_function
+
 import numpy as np
 
 
@@ -16,7 +18,7 @@ class Experiment:
     ShelveChan = "PXI1Slot9/port0/line1"
     Chans = ",".join( [PockelsChan, RedChan,
                        BlueChan, OrangeChan, ShelveChan] )
-    def __init(self):
+    def __init__(self):
         for i in range(15):
             print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
 
@@ -31,13 +33,7 @@ class Experiment:
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
         try:
-            ion_positions = []
-            with open(ions, 'r') as ionfile:
-                for l in ionfile:
-                    pos = tuple( int(x) for x in l.split() )
-                    ion_positions.append( pos )
-            print("ion_positions:")
-            print(ion_positions)
+            ion_positions = self.get_ion_positions(ions)
             bg = []
             brights = []
 
@@ -99,11 +95,7 @@ class Experiment:
                         print("number of bright ions:")
                         print(curr_bright_number)
                         if curr_bright_number == desired_bright_number:
-                            r = NiSimpleDriver(self.RedChan)
-                            r.write_single(False)
-                            time.sleep(reorder_time)
-                            r.write_single(True)
-                            r.close()
+                            self.red_reorder(reorder_time)
                         time.sleep(1.5)
 
                         #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
@@ -131,9 +123,7 @@ class Experiment:
                             sorted.sort()
                             if np.max(data) > 3 * np.std(bg):
                                 break
-                            d = NiSimpleDriver(self.OrangeChan)
-                            d.write_single(True)
-                            d.close()
+                            self.ensure_orange_on()
                             time.sleep(1.5)
                             print(sorted[0:desired_bright_number])
                             if dim_iterations % 10 == 0:
@@ -160,18 +150,7 @@ class Experiment:
                         if reorder_time > 10.0: reorder_time = 10.0
                         if not any(ion_order):
                             print("all dim?")
-                            d = NiSimpleDriver(self.OrangeChan)
-                            d.write_single(True)
-                            d.close()
-                            d = NiSimpleDriver(self.RedChan)
-                            d.write_single(True)
-                            d.close()
-                            d = NiSimpleDriver(self.PockelsChan)
-                            d.write_single(False)
-                            d.close()
-                            d = NiSimpleDriver(self.BlueChan)
-                            d.write_single(True)
-                            d.close()
+                            self.set_lasers_to_cool()
                             time.sleep(3)
 
                         if conn is not None:
@@ -187,19 +166,51 @@ class Experiment:
                     data = [round(datum) for datum in data]
                     outdata = [str(experiment.control_var())]
                     outdata.extend(str(d) for d in data)
-                    print '\t'.join(outdata)
+                    print('\t'.join(outdata))
                     if conn is not None:
                         conn.send('\t'.join(outdata))
                     output.write('\t'.join(outdata) + '\n')
                     output.flush()
 
-                    d = NiSimpleDriver(self.OrangeChan)
-                    d.write_single(True)
-                    d.close()
+                    self.ensure_orange_on()
                     time.sleep(0.3)
 
         finally:
             camera.shutdown()
+
+    def set_lasers_to_cool(self):
+        self.ensure_orange_on()
+        d = NiSimpleDriver(self.RedChan)
+        d.write_single(True)
+        d.close()
+        d = NiSimpleDriver(self.PockelsChan)
+        d.write_single(False)
+        d.close()
+        d = NiSimpleDriver(self.BlueChan)
+        d.write_single(True)
+        d.close()
+
+    def get_ion_positions(self, ions):
+        ion_positions = []
+        with open(ions, 'r') as ionfile:
+            for l in ionfile:
+                pos = tuple(int(x) for x in l.split())
+                ion_positions.append(pos)
+        print("ion_positions:")
+        print(ion_positions)
+        return ion_positions
+
+    def ensure_orange_on(self):
+        d = NiSimpleDriver(self.OrangeChan)
+        d.write_single(True)
+        d.close()
+
+    def red_reorder(self, reorder_time):
+        r = NiSimpleDriver(self.RedChan)
+        r.write_single(False)
+        time.sleep(reorder_time)
+        r.write_single(True)
+        r.close()
 
     def build_data(self, camera, ionpos, image):
         data = []
@@ -221,20 +232,25 @@ class Experiment:
         return (bright * 0.5 + bg * 0.5)
       # return 8000
 
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 4:
-        print "usage: {0} <nruns> <high freq (MHz)> <low freq (MHz)> \
-            <freq step(MHz)> <1762 pulse length (us)> <ion_positions> \
-            <output>".format(sys.argv[0])
-        sys.exit(0)
-    nruns = int(sys.argv[1])
-    current_freq = float(sys.argv[2])
-    stop_freq = float(sys.argv[3])
-    freq_step = float(sys.argv[4])
-    pulse_len = int(sys.argv[5])
-    ions = sys.argv[6]
-    output = sys.argv[7]
+# class bg_tracker:
+#     def __init__(self, camera):
 
-    Experiment(nruns, current_freq, stop_freq, freq_step, pulse_len,
-               ions, output, None)
+#
+#
+# if __name__ == '__main__':
+#     import sys
+#     if len(sys.argv) < 4:
+#         print "usage: {0} <nruns> <high freq (MHz)> <low freq (MHz)> \
+#             <freq step(MHz)> <1762 pulse length (us)> <ion_positions> \
+#             <output>".format(sys.argv[0])
+#         sys.exit(0)
+#     nruns = int(sys.argv[1])
+#     current_freq = float(sys.argv[2])
+#     stop_freq = float(sys.argv[3])
+#     freq_step = float(sys.argv[4])
+#     pulse_len = int(sys.argv[5])
+#     ions = sys.argv[6]
+#     output = sys.argv[7]
+#
+#     Experiment(nruns, current_freq, stop_freq, freq_step, pulse_len,
+#                ions, output, None)
