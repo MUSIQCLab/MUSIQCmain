@@ -22,8 +22,8 @@ class Experiment:
     def __init__(self):
         for i in range(15):
             print("CHECK WHETHER THE TRAPCONTROL VI OR ANDOR ARE ON/OPEN!!!!!!!")
-        self.background = []
-        self.brightness = []
+
+
 
     def run(self, nruns, experiment, ions, desired_order, out, conn=None):
         camera = Luca()
@@ -31,94 +31,68 @@ class Experiment:
         ni = NiDriver(self.Chans)
         reorder_time = 0.05
         reorder_free_record = []
-        number_between_reorder = 0
+        non_reorder_runs = 0
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
         try:
             ion_positions = self.get_ion_positions(ions)
 
-            data = self.initialize_bright_levels(camera, desired_bright_number, ion_positions)
-            threshold = self.calculate_threshold(np.mean(self.brightness), np.mean(self.background))
+            data, background, brightness = self.initialize_bright_levels(camera, desired_bright_number, ion_positions)
 
-            if np.mean(self.brightness) < 8000:
+            if np.mean(brightness) < 8000:
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup(freq_src, ni)
-            print("brightest:", np.max(data), "bg:", np.mean(self.background), "threshold:", threshold)
+            print("brightest:", np.max(data), "bg:", np.mean(background), "threshold:", self.calculate_threshold(brightness, background))
 
 
             while experiment.step( freq_src, ni ):
                 for run in range( nruns ):
                     print(run)
                     # Pre-control waveform image for ion position verification:
-                    data = self.build_data(camera, ion_positions, camera.get_image())
+                    data = self.build_data(camera, ion_positions, camera.get_image(), background)
                     ion_order = [d > threshold for d in data]
 
                     # update bright and bg averages to inform threshold
-                    self.background.append(data[-1])
-                    for x in data:
-                        if x > threshold:
-                            self.brightness.append(x)
-                    if len(self.brightness) > 20:
-                        self.brightness = self.brightness[15:]
-                    if len(self.background) > 20:
-                        self.background = self.background[15:]
-                    threshold = self.calculate_threshold(np.mean(self.brightness), np.mean(self.background))
+                    threshold = self.calculate_threshold(np.mean(brightness), np.mean(background))
+                    brightness, background = self.update_brightness_background(data, threshold, brightness, background)
+
                     if run % 10 == 0:
-                        print("bg mean:", np.mean(self.background), "std:", np.std(self.background), "Threshhold:", threshold, "Min Brightest:",
-                              threshold + np.std(self.brightness))
-                    if run % 20 == 0:
+                        print("bg mean:", np.mean(background), "std:", np.std(background), "Threshhold:", threshold, "Min Brightest:",
+                              threshold + np.std(brightness))
                         print(reorder_free_record)
+
                     if ion_order == desired_order:
-                        number_between_reorder += 1
+                        non_reorder_runs += 1
+
                     while ion_order != desired_order:
-                        if number_between_reorder != 0:
-                            reorder_free_record.append(number_between_reorder)
-                        number_between_reorder = 0
+
+                        # Keep track of how long we go between reordering.
+                        if non_reorder_runs != 0:
+                            reorder_free_record.append(non_reorder_runs)
+                        non_reorder_runs = 0
                         if len(reorder_free_record) > 30:
                             reorder_free_record = reorder_free_record[10:]
+
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
                         print("number of bright ions:")
                         print(curr_bright_number)
-                        if curr_bright_number == desired_bright_number:
-                            self.red_reorder(reorder_time)
+
+                        if curr_bright_number == desired_bright_number: # Right number of ions? Use the red to force
+                            self.red_reorder(reorder_time)              # reordering
                         time.sleep(1.5)
 
-                        #camera.get_image()  # Inconsistent results on whether this is necessary. OH BUT IT'S ONLY FOR REORDER!!!
-                        data = self.build_data(camera, ion_positions, camera.get_image())
-                        for x in data:
-                            if x > threshold:
-                                self.brightness.append(x)
-                        if len(self.brightness) > 20:
-                            self.brightness = self.brightness[15:]
-
+                        data = self.build_data(camera, ion_positions, camera.get_image(), background)
+                        brightness, background = self.update_brightness_background(data, threshold, brightness,
+                                                                                   background)
 
                         dim_iterations = 0  #how many times have we been dim?
                         # while np.max(data) < threshold + np.std(brights):
                         # code block to check whether ion is very dim.
-                        while np.mean(self.brightness) < np.mean(self.background) + 3 * np.std(self.background) or np.mean(
-                                self.brightness) < threshold + 0.7 * np.std(self.brightness):
-                            dim_iterations += 1
-                            print("ions are very dim. Possibly uncool or melted. Bright values:")
-                            print(str(experiment.control_var()))
-                            data = self.build_data(
-                                camera, ion_positions, camera.get_image())
-                            print(data)
-                            sorted = np.array(data)
-                            sorted.sort()
-                            if np.max(data) > 3 * np.std(self.background):
-                                break
-                            self.ensure_orange_on()
-                            time.sleep(1.5)
-                            print(sorted[0:desired_bright_number])
-                            if dim_iterations % 10 == 0:
-                                threshold = self.calculate_threshold(np.mean(self.brightness), np.mean(self.background))
-                                print("bg mean:", np.mean(self.background), )
-                                print("bg std :", np.std(self.background))
-                                print("Threshhold:", threshold)
-                                print("bright std:", np.std(self.brightness))
-                                print("Min Brightest:", threshold + np.std(self.brightness))
+                        data, threshold = self.check_if_ion_dim(background, brightness, camera, data,
+                                                                desired_bright_number, experiment,
+                                                                ion_positions, threshold)
 
                         prev_order = ion_order
                         ion_order = [ d > threshold for d in data ]
@@ -140,21 +114,21 @@ class Experiment:
                             time.sleep(3)
 
                         if conn is not None:
-                            outdata = [str(experiment.control_var())]
-                            outdata.extend(str(d) for d in data)
-                            outdata.extend(str(d) for d in data)
-                            conn.send('reordata ' + '\t'.join(outdata))
+                            out_data = [str(experiment.control_var())]
+                            out_data.extend(str(d) for d in data)
+                            out_data.extend(str(d) for d in data)
+                            conn.send('reordata ' + '\t'.join(out_data))
 
                     ni.run()
-                    postdata = self.build_data(camera, ion_positions, camera.get_image())
-                    data.extend(postdata)
+                    post_data = self.build_data(camera, ion_positions, camera.get_image(), background)
+                    data.extend(post_data)
                     data = [round(datum) for datum in data]
-                    outdata = [str(experiment.control_var())]
-                    outdata.extend(str(d) for d in data)
-                    print('\t'.join(outdata))
+                    out_data = [str(experiment.control_var())]
+                    out_data.extend(str(d) for d in data)
+                    print('\t'.join(out_data))
                     if conn is not None:
-                        conn.send('\t'.join(outdata))
-                    output.write('\t'.join(outdata) + '\n')
+                        conn.send('\t'.join(out_data))
+                    output.write('\t'.join(out_data) + '\n')
                     output.flush()
 
                     self.ensure_orange_on()
@@ -163,17 +137,55 @@ class Experiment:
         finally:
             camera.shutdown()
 
+    def check_if_ion_dim(self, background, brightness, camera, data, desired_bright_number, experiment,
+                         ion_positions, threshold):
+        dim_iterations = 0
+        while np.max(data) < 5 * np.std(background):
+            dim_iterations += 1
+            print("ions are very dim. Possibly uncool or melted. Bright values:")
+            print(str(experiment.control_var()))
+
+            data = self.build_data(camera, ion_positions, camera.get_image(), background)
+            print(data)
+            sorted = np.array(data)
+            sorted.sort()
+            if np.max(data) > 5 * np.std(background):
+                break
+            self.ensure_orange_on()
+            time.sleep(1.5)
+            print(sorted[0:desired_bright_number])
+            if dim_iterations % 10 == 0:
+                threshold = self.calculate_threshold(np.mean(brightness), np.mean(background))
+                print("bg mean:", np.mean(background), )
+                print("bg std :", np.std(background))
+                print("Threshhold:", threshold)
+                print("bright std:", np.std(brightness))
+                print("Min Brightest:", threshold + np.std(brightness))
+        return data, threshold
+
+    def update_brightness_background(self, data, threshold, brightness, background):
+        background.append(data[-1])
+        for x in data:
+            if x > threshold:
+                brightness.append(x)
+        if len(brightness) > 20:
+            brightness = brightness[15:]
+        if len(background) > 20:
+            background = background[15:]
+        return brightness, background
+
     def initialize_bright_levels(self, camera, desired_bright_number, ion_positions):
+        background = []
         for i in range(15):
             print(i)
-            data = self.build_data(camera, ion_positions, camera.get_image())
-            self.background.append(data[-1])
+            data = self.build_data(camera, ion_positions, camera.get_image(), np.array([0]))
+            background.append(data[-1])
         data.sort()
         data.reverse()
-        self.brightness = (data[0:desired_bright_number])
-        self.background = [b - np.mean(self.background) for b in self.background]
-        self.brightness = [br - np.mean(self.background) for br in self.brightness]
-        return data
+        brightness = (data[0:desired_bright_number])
+        background = [b - np.mean(background) for b in background]
+        brightness = [br - np.mean(background) for br in brightness]
+        return data, background, brightness
 
     def set_lasers_to_cool(self):
         self.ensure_orange_on()
@@ -209,7 +221,7 @@ class Experiment:
         r.write_single(True)
         r.close()
 
-    def build_data(self, camera, ionpos, image):
+    def build_data(self, camera, ionpos, image, background):
         data = []
         sum_dist = 10
         for p in ionpos:
@@ -218,7 +230,7 @@ class Experiment:
                 for oy in range(-sum_dist, sum_dist):
                     val += image[(p[1] + oy) * camera.width + p[0] + ox]
             data.append(val)
-        return data - np.mean(self.background)
+        return data - np.mean(background)
 
     def calculate_threshold(self, bright, bg):
         # return 5000
