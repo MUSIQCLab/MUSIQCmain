@@ -24,6 +24,8 @@ class Experiment:
         freq_src = FreqDriver(u'USB0::0x1AB1::0x0641::DG4B142100247::INSTR')
         ni = NiDriver(self.Chans)
         reorder_time = 0.05
+        reorder_free_record = []
+        number_between_reorder = 0
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
@@ -81,9 +83,15 @@ class Experiment:
                     if i % 10 == 0:
                         print("bg mean:", np.mean(bg), "std:", np.std(bg), "Threshhold:", threshold, "Min Brightest:",
                           threshold + np.std(brights))
-
-
+                    if i % 20 == 0:
+                        print(reorder_free_record)
+                    number_between_reorder += 1
                     while ion_order != desired_order:
+                        if number_between_reorder != 1:
+                            reorder_free_record.append(number_between_reorder)
+                        number_between_reorder = 0
+                        if len(reorder_free_record) > 30:
+                            reorder_free_record = reorder_free_record[10:]
                         curr_bright_number = sum(map(lambda x: 1 if x else 0, ion_order))
                         print("number of bright ions:")
                         print(curr_bright_number)
