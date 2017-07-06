@@ -87,9 +87,10 @@ class Experiment:
                           threshold + np.std(brights))
                     if run % 20 == 0:
                         print(reorder_free_record)
-                    number_between_reorder += 1
+                    if ion_order == desired_order:
+                        number_between_reorder += 1
                     while ion_order != desired_order:
-                        if number_between_reorder != 1:
+                        if number_between_reorder != 0:
                             reorder_free_record.append(number_between_reorder)
                         number_between_reorder = 0
                         if len(reorder_free_record) > 30:
