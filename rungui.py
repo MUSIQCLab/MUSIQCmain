@@ -132,7 +132,7 @@ def experiment(conn, args):
         starttime, stoptime, timestep, frequency = int(args.rabiflop[0]), int(args.rabiflop[1]), \
                                                    int(args.rabiflop[2]), float(args.rabiflop[3])
         rabiflop = RabiFlop(starttime, stoptime, timestep, frequency)
-    exp = Experiment
+    exp = Experiment()
     if args.freqscan:  # running low to high in frequency
         exp.run(nruns, freqscan, ionpos, order, outdata, conn)
     elif args.rabiflop:

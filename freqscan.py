@@ -66,6 +66,7 @@ class Experiment:
 
             while experiment.step( freq_src, ni ):
                 for run in range( nruns ):
+                    print(run)
                     # Pre-control waveform image for ion position verification:
                     data = self.build_data(camera, ion_positions, camera.get_image())
                     data = [datum - bg_0 for datum in data]
@@ -172,11 +173,11 @@ class Experiment:
                             d.close()
                             time.sleep(3)
 
-                    if conn is not None:
-                        outdata = [str(experiment.control_var())]
-                        outdata.extend(str(d) for d in data)
-                        outdata.extend(str(d) for d in data)
-                        conn.send('reordata ' + '\t'.join(outdata))
+                        if conn is not None:
+                            outdata = [str(experiment.control_var())]
+                            outdata.extend(str(d) for d in data)
+                            outdata.extend(str(d) for d in data)
+                            conn.send('reordata ' + '\t'.join(outdata))
 
                     ni.run()
                     postdata = self.build_data(camera, ion_positions, camera.get_image())
