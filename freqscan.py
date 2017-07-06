@@ -29,6 +29,7 @@ class Experiment:
 
         output = open(out, 'w')
         desired_bright_number = sum(map(lambda x: 1 if x else 0, desired_order))
+        debug = open("debug.dat", 'w')
         try:
             ion_positions = []
             with open(ions, 'r') as ionfile:
@@ -55,17 +56,17 @@ class Experiment:
 
 
             threshold = self.calculate_threshold(np.mean(brights), np.mean(bg))
-            if threshold > np.mean(brights) - 1.5 * np.std(brights):
+
+            if np.mean(brights) < 8000:
                 raise RuntimeError("Threshold too close to bright values. Increase ion brightness or exposure time.")
 
             experiment.setup( freq_src, ni )
             print("brightest:", np.max(data), "bg:", np.mean(bg), "threshold:", threshold)
 
-            i = 0  # counter to keep track of how often debugging information is displayed in console output
+
             while experiment.step( freq_src, ni ):
                 for run in range( nruns ):
                     # Pre-control waveform image for ion position verification:
-                    i += 1
                     data = self.build_data(camera, ion_positions, camera.get_image())
                     data = [datum - bg_0 for datum in data]
                     ion_order = [d > threshold for d in data]
@@ -210,10 +211,13 @@ class Experiment:
         return data
 
     def calculate_threshold(self, bright, bg):
-        return 5000
-        # I'm starting to realize that the dynamic threshold doesn't really work very well.
-        # I'm going to start using a static one...
-        # return (bright * 0.4 + bg * 0.6)
+        # return 5000
+        # # I'm starting to realize that the dynamic threshold doesn't really work very well.
+        # # I'm going to start using a static one...
+        # # return (bright * 0.4 + bg * 0.6)
+
+        return (bright * 0.5 + bg * 0.5)
+      # return 8000
 
 if __name__ == '__main__':
     import sys
